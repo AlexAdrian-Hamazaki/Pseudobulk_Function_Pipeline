@@ -97,13 +97,13 @@ This pipeline requires `.h5ad` files to as an input
 First, create a directory to hold your `.h5ad` files running the following in a terminal:
 
 ```
-mkdir data/h5ad
+mkdir data data/h5ad
 
 ```
 
 Next, move the `.h5ad` files you want to run through the pipeline into `data/h5ad`
 
-As an example, try the `TS_Liver.h5ad` and `TS_Skin.h5ad` datasets from Tabula Sapiens as found [here](https://figshare.com/articles/dataset/Tabula_Sapiens_release_1_0/14267219)
+As an example, try the `TS_Large_Intestine.h5ad` and `TS_Kidney.h5ad` datasets from Tabula Sapiens as found [here](https://figshare.com/articles/dataset/Tabula_Sapiens_release_1_0/14267219)
 
 ```
 mv {somedirectory/h5adfile} data/h5ad
