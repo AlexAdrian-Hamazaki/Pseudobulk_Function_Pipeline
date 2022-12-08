@@ -12,16 +12,23 @@
  
 ### Files
  
- + environment.yml: Contains dependencies for workflow. Used to build conda environment
+ + environment.yml: Contains dependencies for workflow. Used to build conda environment.
  
  + Snakefile: Instructions for snakemake to run pipeline.
+
+ + config.yaml: Config file containing global parameters specific to your .h5ad file.
  
- + dag.svg: Representation of overall workflow of the pipeline
+ + dag.svg: Representation of overall workflow of the pipeline.
  
- + README.md: File containing information about how to run the pipeline
+ + README.md: File containing information about how to run the pipeline.
 
 
 ## Introduction
+
+
+### Purpose
+
+This pipeline takes scRNAseq data in the form of .h5ad files, creates pseudobulk, and then performs function prediction.
 
 ### Background and Rationale
 
@@ -31,9 +38,19 @@ There are many models that use bulkRNAseq to predict functions of genes. Althoug
 
 Currently, there is no way to perform function prediction using scRNAseq data. Thus, the only way to investigate function prediction between bulk and scRNAseq is to create  “pseudobulk” from the scRNAseq data. To create pseudobulk data, single cell data is grouped by biological context, such as “cell type” or “organism part”. Expression is then averaged within each group. As an end result, an expression matrix is created, where rows are different biological contexts, columns are genes, and values in the matrix represent the average expression of a gene in a biological context. 
 
-### Purpose
+### Pipeline Workflow
 
-This pipeline takes scRNAseq data in the form of .h5ad files, creates pseudobulk, and then performs function prediction. The final output of the pipeline will be a graph displaying the distribution of AUC values outputted by EGAD.
+The key steps of this workflow are listed here:
+
+1. Subsample scRNAseq Data (for the purpose of reducing run time for this project)
+2. Normalize scRNAseq Data for UMI depth
+3. Get the Average UMI Counts of each Cell Type
+4. Create Pseudobulk by aggragating the Average UMI Counts
+5. Perform EGAD for function preduction
+6. Visualize distrubution of AUCs
+
+![](dag.svg) 
+
 
 --------------------
 
@@ -55,7 +72,7 @@ Next, use the provided `environment.yml` file to build the conda environment:
 conda env create --file environment.yml
 ```
 
-### Loading Data into Pipeline
+### Preparing `.h5ad` files
 
 Because scRNA-seq files can be extroadinarily large, they are often kept in an annotated sparse matrix format called `.h5ad`.
 This pipeline requires `.h5ad` files to as an input
@@ -73,8 +90,14 @@ As an example, try the `TS_Liver.h5ad` and `TS_Skin.h5ad` datasets from Tabula S
 ```
 mv {somedirectory/h5adfile} data/h5ad
 ```
+### Changing Global Parameters
 
-Once all `.h5ad` files have been moved, you are ready to run the pipeline!
+Global Parameters must be changed to align with your `.h5ad` files
+
+1) Open config.yaml
+2) Change `UserInput_CellTypeColumn`: This global paramater corresponds to the column in your `.h5ad` file's anndata.obs path that contains the cell type                                         meta-data that you will pseudobulk using. Eg: If you want have cell type information in a column called                                                     adata.obs['cell_type'], change this parameter to 'cell_type'. Input must be string.
+
+Once Global Parameters are set, you are ready to use the pipeline!
 
 ### Running The Pipeline
 
