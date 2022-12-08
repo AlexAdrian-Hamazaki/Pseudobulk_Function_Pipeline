@@ -97,7 +97,7 @@ This pipeline requires `.h5ad` files to as an input
 First, create a directory to hold your `.h5ad` files running the following in a terminal:
 
 ```
-mkdir data/h5ad
+mkdir data data/h5ad
 
 ```
 
