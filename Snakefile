@@ -73,16 +73,17 @@ rule create_pseudobulk:
 
     shell:
         """
-        array=($(ls data/average_counts))
-        echo ${{array[0]}}
-        
+
+
         touch {output.pseudobulk}
         
-        head -n 1 {input.data}/${{array[0]}} > {output.pseudobulk}
+        head -n 1 {input.data[0]} > {output.pseudobulk}
         
+        array2=({input.data})
         
-        for file in ${{array[@]}}; do
-            tail -n+2  {input.data}/${{file}} >> {output.pseudobulk}
+        for file in ${{array2}}; do
+            echo ${{file}}
+            tail -n+2  ${{file}} >> {output.pseudobulk}
         done
         """
         

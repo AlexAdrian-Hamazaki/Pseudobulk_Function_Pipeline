@@ -1,6 +1,4 @@
-
-if (!require("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
+print("RUNNING EGAD")
 
 
 packages <-installed.packages()[,"Package"]
