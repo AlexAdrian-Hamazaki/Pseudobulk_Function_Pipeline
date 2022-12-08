@@ -83,19 +83,20 @@ def test_average_function(adata):
 
 #path = "data/subsampled_normalized/TS_Skin.h5ad"
 path = sys.argv[1]
+cell_type_column = sys.argv[2]
 adata = anndata.read_h5ad(path)
 
 
 # In[174]:
 
 
-cell_types = adata.obs.cell_ontology_class.unique()
+cell_types = adata.obs[cell_type_column].unique()
 
 
 # In[192]:
 
 
-avg_gene_count = get_avg_gene_count_for_cell_type(adata = adata, cell_type_column ='cell_ontology_class', layer_name = 'depth_normalized')
+avg_gene_count = get_avg_gene_count_for_cell_type(adata = adata, cell_type_column =cell_type_column, layer_name = 'depth_normalized')
 
 
 # In[193]:

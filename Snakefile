@@ -1,3 +1,13 @@
+#~~~~USER INPUTS: These Global Variables Must be Changed To Fit Your .H5ad Data File~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+UserInput_CellTypeColumn = "Column in adata.obs that contains the meta-data that you will pseudobulk using. Eg: If you have cell type information in a column called                                    cell_type put in the column name. Put in cell_type. Input must be string."
+
+#~~~~DEFAULT VALUES FOR PROJECT EXAMPLE: For the 501 Project. These are the default global variables~~~~~~~~~~~
+
+UserInput_CellTypeColumn = "cell_ontology_class"
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 import os
 import re
 
@@ -36,15 +46,9 @@ rule subsample:
         
 rule normalize_depth:
     input:
-<<<<<<< HEAD
         data = "data/subsampled/{h5adfile}.h5ad"
     output:
         adata = "data/subsampled_normalized/{h5adfile}.h5ad"
-=======
-        data = "data/subsampled/{h5adfile}"
-    output:
-        adata = "data/subsampled_normalized/{h5adfile}"
->>>>>>> origin/main
     params:
         script = "bin/normalize_depth.py"
 
@@ -59,11 +63,12 @@ rule average_UMIs:
     output:
         organism_part_averages = "data/average_counts/{h5adfile}.csv"
     params:
-        script = "bin/average_UMI.py"
+        script = "bin/average_UMI.py",
+        cell_type_column = UserInput_CellTypeColumn
 
     shell:
         """
-        python {params.script} {input.data}
+        python {params.script} {input.data} {params.cell_type_column}
         """
         
         
