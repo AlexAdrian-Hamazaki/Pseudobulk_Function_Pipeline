@@ -105,7 +105,7 @@ You can choose to change the amount of cores you use by changing "4" to the desi
 
 # Relevant Output
 
-###### Files
+### Files
  
  + data/pseudobulk/pseudobulk.csv: Pseudobulk generated from scRNAseq data
 
