@@ -38,7 +38,7 @@ There are many models that use bulkRNAseq to predict functions of genes. Althoug
 
 Currently, there is no way to perform function prediction using scRNAseq data. Thus, the only way to investigate function prediction between bulk and scRNAseq is to create  “pseudobulk” from the scRNAseq data. To create pseudobulk data, single cell data is grouped by biological context, such as “cell type” or “organism part”. Expression is then averaged within each group. As an end result, an expression matrix is created, where rows are different biological contexts, columns are genes, and values in the matrix represent the average expression of a gene in a biological context. 
 
-### Pipeline Workflow
+### Workflow Overview
 
 The key steps of this workflow are listed here:
 
@@ -51,14 +51,20 @@ The key steps of this workflow are listed here:
 
 ![](dag.svg) 
 
-
 --------------------
 
 ## Usage
 
+### Dependancies
+
+```
+python=>3.9.13
+snakemake=>7.18.1
+```
+
 ### Installation
 
-Installing this pipeline requires [conda](https://conda.io/projects/conda/en/stable/user-guide/install/download.html, [git]https://git-scm.com/book/en/v2/Getting-Started-Installing-Git), and [snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html)
+Installing this pipeline requires [conda](https://conda.io/projects/conda/en/stable/user-guide/install/download.html), [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git), and [snakemake](https://snakemake.readthedocs.io/en/stable/getting_started/installation.html).
 
 
 First, clone the repository by running the following command in a terminal:
@@ -126,7 +132,7 @@ You can choose to change the amount of cores you use by changing "4" to the desi
 =======
 
 
-# Relevant Output
+## Relevant Output
 
 ### Files
  
