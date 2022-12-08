@@ -23,6 +23,9 @@
  + README.md: File containing information about how to run the pipeline.
 
 
+--------------------
+
+
 ## Introduction
 
 
@@ -51,7 +54,9 @@ The key steps of this workflow are listed here:
 
 ![](dag.svg) 
 
+
 --------------------
+
 
 ## Usage
 
@@ -87,6 +92,7 @@ First, create a directory to hold your `.h5ad` files running the following in a 
 
 ```
 mkdir data/h5ad
+
 ```
 
 Next, move the `.h5ad` files you want to run through the pipeline into `data/h5ad`
@@ -95,6 +101,7 @@ As an example, try the `TS_Liver.h5ad` and `TS_Skin.h5ad` datasets from Tabula S
 
 ```
 mv {somedirectory/h5adfile} data/h5ad
+
 ```
 ### Changing Global Parameters
 
@@ -129,7 +136,7 @@ snakemake --cores 4
 You can choose to change the amount of cores you use by changing "4" to the desired number
 
 
-=======
+--------------------
 
 
 ## Relevant Output
