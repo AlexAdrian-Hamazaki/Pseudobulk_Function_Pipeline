@@ -81,10 +81,11 @@ cd Pseudobulk_Function_Pipeline
 
 ```
 
-Next, use the provided `environment.yml` file to build the conda environment:
+Next, use the provided `environment.yml` file to build and activate the conda environment:
 
 ```
 conda env create --file environment.yml
+conda activate PseudoPipelineEnv
 
 ```
 
@@ -125,13 +126,6 @@ Using Tmux (Optional)
 ```
 tmux new -s pipeline
 tmux attach-session -t pipeline
-
-```
-
-Before running the pipeline you need to activate the conda environment you created
-
-```
-conda activate environment
 
 ```
 
