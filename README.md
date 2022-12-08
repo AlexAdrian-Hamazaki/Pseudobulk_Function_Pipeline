@@ -77,6 +77,7 @@ First, clone the repository by running the following command in a terminal:
 
 ```
 git clone https://github.com/AlexAdrian-Hamazaki/Pseudobulk_Function_Pipeline
+cd Pseudobulk_Function_Pipeline
 
 ```
 
