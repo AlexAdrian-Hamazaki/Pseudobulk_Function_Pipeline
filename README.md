@@ -65,6 +65,7 @@ The key steps of this workflow are listed here:
 ```
 python=>3.9.13
 snakemake=>7.18.1
+
 ```
 
 ### Installation
@@ -76,11 +77,14 @@ First, clone the repository by running the following command in a terminal:
 
 ```
 git clone https://github.com/AlexAdrian-Hamazaki/Pseudobulk_Function_Pipeline
+
 ```
 
 Next, use the provided `environment.yml` file to build the conda environment:
+
 ```
 conda env create --file environment.yml
+
 ```
 
 ### Preparing `.h5ad` files
@@ -120,18 +124,21 @@ Using Tmux (Optional)
 ```
 tmux new -s pipeline
 tmux attach-session -t pipeline
+
 ```
 
 Before running the pipeline you need to activate the conda environment you created
 
 ```
 conda activate environment
+
 ```
 
 To run the pipeline, simply enter:
 
 ```
 snakemake --cores 4
+
 ```
 You can choose to change the amount of cores you use by changing "4" to the desired number
 
