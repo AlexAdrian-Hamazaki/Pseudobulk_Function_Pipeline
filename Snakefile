@@ -36,9 +36,15 @@ rule subsample:
         
 rule normalize_depth:
     input:
+<<<<<<< HEAD
         data = "data/subsampled/{h5adfile}.h5ad"
     output:
         adata = "data/subsampled_normalized/{h5adfile}.h5ad"
+=======
+        data = "data/subsampled/{h5adfile}"
+    output:
+        adata = "data/subsampled_normalized/{h5adfile}"
+>>>>>>> origin/main
     params:
         script = "bin/normalize_depth.py"
 

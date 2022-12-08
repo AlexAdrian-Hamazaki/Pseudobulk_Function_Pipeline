@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # BIOF501 Term Project: Pipeline for Pseudobulking and Function Prediction 
 
 ### *By Alex Adrian-Hamazaki
@@ -100,3 +101,6 @@ snakemake --cores 4
 You can choose to change the amount of cores you use by changing "4" to the desired number
 
 
+=======
+# Pseudobulk_Function_Pipeline
+>>>>>>> origin/main
