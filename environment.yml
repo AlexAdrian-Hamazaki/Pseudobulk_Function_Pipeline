@@ -1,4 +1,4 @@
-name: snakemake_clone
+name: PseudoPipelineEnv
 channels:
   - bioconda
   - r
