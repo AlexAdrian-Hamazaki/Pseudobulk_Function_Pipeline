@@ -14,13 +14,13 @@ import os
 # In[7]:
 
 
-path = '../data/EAGD/EGAD.csv'
+path = 'data/EAGD/EGAD.csv'
 
 
 # In[62]:
 
 
-save_path = '../data/figs'
+save_path = 'data/figs'
 
 
 # In[8]:
@@ -57,12 +57,13 @@ np.absolute(EGAD_auc).max()
 
 
 plt.hist(np.log(np.absolute(EGAD_auc+1)), bins = 10, range = (0, 1))
-plt.x('log AC
+plt.xlabel('log AUC')
+plt.ylabel('Count')
 
 
 # In[67]:
 
-
-os.mkdir(save_path)
+if not os.path.isdir(save_path):
+    os.mkdir(save_path)
 plt.savefig(f'{save_path}/auc.jpeg')
 
