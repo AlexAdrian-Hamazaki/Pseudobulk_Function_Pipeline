@@ -145,7 +145,7 @@ You can choose to change the amount of cores you use by changing "4" to the desi
 
 ### Files
  
- + data/pseudobulk/pseudobulk.csv: Pseudobulk generated from scRNAseq data. A matrix where rows are the different biologican contexts you pseudobulked for. Columns are genes. Values in the matrix are the average counts for each gene in each biological context.
+ + data/pseudobulk/pseudobulk.csv: Pseudobulk generated from scRNAseq data. A matrix where rows are the different biological contexts you pseudobulked for. Columns are genes. Values in the matrix are the average counts for each gene in each biological context.
 
  + data/EAGD/EGAD.csv: EGAD output. Contains AUC values for each GO Annotation. A Data frame containing AUC values for each GO annotation
  
