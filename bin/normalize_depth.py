@@ -69,7 +69,7 @@ X_counts_UMIs = sum_UMIs_per_cell(adata)
 # In[31]:
 
 
-X_counts_UMIs
+adata.obs['X_counts_UMIs'] = X_counts_UMIs
 
 
 # In[32]:
