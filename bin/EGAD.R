@@ -4,7 +4,7 @@ print("RUNNING EGAD")
 packages <-installed.packages()[,"Package"]
 
 if (!"EGAD" %in% packages) {
-    BiocManager::install("EGAD")
+    BiocManager::install("EGAD", version = "1.26.0")
     }
 
 library(EGAD)
