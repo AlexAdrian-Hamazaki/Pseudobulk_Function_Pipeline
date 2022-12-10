@@ -36,23 +36,19 @@ adata = anndata.read_h5ad(path)
 ### Gene Names
 gene_symbols = adata.var.gene_symbol
 
-print(f"There are {len(gene_symbols)} gene symbols")
 
 ### Num Cells
 
-print(f'There are {adata.shape[0]} cells')
 
 ### Cell Types
 #Larger compartments
 #cell_types = adata.obs.compartment.unique()
 cell_types = adata.obs.cell_ontology_class.unique()
 
-print(f"The Cell Types are {np.squeeze(cell_types)}")
 
 ### Organism_Part
 organism_part = adata.obs.organ_tissue.unique()[0]
 
-print(f"The Organism Part is {organism_part}")
 
 
 # # Normalize for UMI Depthdef sum_UMIs_per_cell(adata):
@@ -67,7 +63,6 @@ def sum_UMIs_per_cell(adata):
     X_counts_UMIs = [np.sum(adata[cell_index].X) for cell_index in range(adata.shape[0])]
     return np.array(X_counts_UMIs)
 
-print('Summarizing UMIs Per Single Cell')
 X_counts_UMIs = sum_UMIs_per_cell(adata)
 
 
@@ -90,7 +85,6 @@ assert np.sum(adata[adata.shape[0]-1].X) == X_counts_UMIs[adata.shape[0]-1]
 # In[33]:
 
 
-adata.obs['X_counts_UMIs'] = X_counts_UMIs
 
 
 # ### Step 3. Devide each UMI By its sum count
@@ -117,9 +111,7 @@ def normalize_UMIs(adata):
     adata.layers['depth_normalized'] = sparse_normed_layer
 
     return None
-print('Calculating Depth Normed Layer')
 depth_normed = normalize_UMIs(adata)
-print('Calculated')
 
 
 # In[35]:
@@ -159,7 +151,6 @@ filename = split[len(split)-1]
 # In[43]:
 
 save_path = f'{outpath}/{filename}'
-print(f'Wrote to {save_path}')
 adata.write(save_path)
 
 

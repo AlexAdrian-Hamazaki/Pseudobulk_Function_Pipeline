@@ -9,7 +9,6 @@ if (!"EGAD" %in% packages) {
 
 library(EGAD)
 data_file <-snakemake@input[[1]]
-print(data_file)
 save <- "data/EAGD/EGAD.csv"
 
 
@@ -79,7 +78,7 @@ annotations <- make_annotations(GO.human[,c('GO', 'evidence')], unique(GO.human$
 # rownames(expression_data) %in% GO.human
 
 ################ Neighbor Voting
-print("Performing Neighbor Voting")
+print("Performing Neighbor Voting. This can take a while")
 auroc <- neighbor_voting(genes.labels = annotations, 
                          network = coexpression_network,
                          nFold = 3,
