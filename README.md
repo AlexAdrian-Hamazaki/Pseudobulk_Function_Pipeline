@@ -111,7 +111,8 @@ mv {somedirectory/h5adfile} data/h5ad
 ```
 ### Changing Global Parameters
 
-Global Parameters must be changed to align with your `.h5ad` files. If you are using`TS_Large_Intestine.h5ad` and `TS_Kidney.h5ad` datasets from Tabula Sapiens then you do not need to change anything.
+Global Parameters must be changed to align with your `.h5ad` files. 
+Please note, if you are using`TS_Large_Intestine.h5ad` and `TS_Kidney.h5ad` datasets from Tabula Sapiens then you do not need to change anything.
 
 1) Open config.yaml
 2) Change `UserInput_CellTypeColumn`: This global paramater corresponds to the column in your `.h5ad` file's anndata.obs path that contains the cell type                                         meta-data that you will pseudobulk using. Eg: If you want have cell type information in a column called                                                     adata.obs['cell_type'], change this parameter to 'cell_type'. Input must be string.
@@ -145,7 +146,7 @@ You can choose to change the amount of cores you use by changing "4" to the desi
 
 ### Files
  
- + data/pseudobulk/pseudobulk.csv: Pseudobulk generated from scRNAseq data. A matrix where rows are the different biologican contexts you pseudobulked for. Columns are genes. Values in the matrix are the average counts for each gene in each biological context.
+ + data/pseudobulk/pseudobulk.csv: Pseudobulk generated from scRNAseq data. A matrix where rows are the different biological contexts you pseudobulked for. Columns are genes. Values in the matrix are the average counts for each gene in each biological context.
 
  + data/EAGD/EGAD.csv: EGAD output. Contains AUC values for each GO Annotation. A Data frame containing AUC values for each GO annotation
  
