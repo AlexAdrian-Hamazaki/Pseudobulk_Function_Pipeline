@@ -69,6 +69,7 @@ X_counts_UMIs = sum_UMIs_per_cell(adata)
 # In[31]:
 
 
+
 adata.obs['X_counts_UMIs'] = X_counts_UMIs
 
 
@@ -84,7 +85,7 @@ assert np.sum(adata[adata.shape[0]-1].X) == X_counts_UMIs[adata.shape[0]-1]
 
 # In[33]:
 
-
+adata.obs['X_counts_UMIs'] = X_counts_UMIs
 
 
 # ### Step 3. Devide each UMI By its sum count
