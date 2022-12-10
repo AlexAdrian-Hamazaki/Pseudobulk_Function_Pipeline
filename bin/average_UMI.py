@@ -37,18 +37,14 @@ def get_avg_gene_count_for_cell_type(adata, cell_type_column:str, layer_name:str
     for cell_type in cell_types:
 
 
-        print('Investingating ', cell_type)
 
-        print('Creating h5df of only ', cell_type)
         #Splices H5data to contain only cells of a given cell type
         h5df_grouped_cells = adata[adata.obs[cell_type_column] == cell_type]
 
         #print('Sending h5df.X to dense format from sparse')
         #denseX = h5df_grouped_cells.X.todense()
 
-        print("Using UMI depth_normed layer")
 
-        print('Calculating Average Expresion for each gene in ', cell_type)
         UMI_mean = np.mean(h5df_grouped_cells.layers["depth_normalized"].todense(), axis = 0)
         UMI_mean = np.asarray(UMI_mean)[0]
         #avg = np.squeeze(np.asarray(avg))

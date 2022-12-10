@@ -22,7 +22,6 @@ import os
 # In[2]:
 
 
-print("Running")
 
 
 # In[2]:
@@ -30,7 +29,6 @@ print("Running")
 
 #path = '../data/h5ad/'
 path = sys.argv[1]
-print(path)
 
 
 # In[ ]:
@@ -56,22 +54,18 @@ print(path)
 def main(path:str, from_cli = True):
     
     if from_cli == True:
-        print('running')
         adata = anndata.read_h5ad(path)
         adata = adata[0:int(adata.shape[0]/4), 0:int(adata.shape[1]/5)]
 
         path1 =re.sub("\.h5ad", "", path)
         split = re.split("/", path1)
-        print(split)
         path2 = f'{split[0]}/subsampled/{split[2]}.h5ad'
-        print(path2)
 
         outpath = 'data/subsampled'
         if os.path.exists(outpath) == False:
             os.mkdir(outpath)
             
         final_save = f'{outpath}/{split[2]}.h5ad'
-        print(final_save)
 
         adata.write(final_save)
         
