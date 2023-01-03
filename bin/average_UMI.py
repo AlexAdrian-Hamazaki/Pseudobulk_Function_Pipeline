@@ -10,6 +10,7 @@ import csv
 import os
 import sys
 import anndata
+import re
 
 
 # In[189]:
@@ -87,7 +88,7 @@ adata = anndata.read_h5ad(path)
 
 
 cell_types = adata.obs[cell_type_column].unique()
-
+gene_symbols = np.array(adata.var['gene_symbol'])
 
 # In[192]:
 
@@ -97,11 +98,15 @@ avg_gene_count = get_avg_gene_count_for_cell_type(adata = adata, cell_type_colum
 
 # In[193]:
 
+# Identify File name
+split = re.split('/', path)
 
-gene_symbols = adata.var.gene_symbol
+comp = re.compile(".*\.h5ad")
 
-organism_part = path.split("/")[2]
-organism_part = organism_part.split(".")[0]
+file = list(filter(comp.match, split))[0]
+print(f'file {file}')
+
+organism_part = re.sub(".h5ad", "", file)
 
 pd_avg_gene_count = pd.DataFrame(avg_gene_count, columns=gene_symbols, index=[organism_part+'_'+ct for ct in cell_types])
 
@@ -116,8 +121,10 @@ assert test_average_function(adata)
 # In[195]:
 
 
+
 outpath = 'data/average_counts'
 if not os.path.exists(outpath):
+    print('created dir')
     os.makedirs(outpath)
 
 print( f"Wrote Avg Counts for {organism_part} and its cell types")

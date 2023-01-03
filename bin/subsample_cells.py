@@ -29,6 +29,7 @@ import os
 
 #path = '../data/h5ad/'
 path = sys.argv[1]
+save_path = 'data/subsampled'
 
 
 # In[ ]:
@@ -57,15 +58,19 @@ def main(path:str, from_cli = True):
         adata = anndata.read_h5ad(path)
         adata = adata[0:int(adata.shape[0]/4), 0:int(adata.shape[1]/5)]
 
-        path1 =re.sub("\.h5ad", "", path)
-        split = re.split("/", path1)
-        path2 = f'{split[0]}/subsampled/{split[2]}.h5ad'
+        split = re.split('/', path)
+
+        comp = re.compile(".*\.h5ad")
+
+        file = list(filter(comp.match, split))[0]
+
+        print(file)
 
         outpath = 'data/subsampled'
         if os.path.exists(outpath) == False:
             os.mkdir(outpath)
             
-        final_save = f'{outpath}/{split[2]}.h5ad'
+        final_save = f'{outpath}/{file}'
 
         adata.write(final_save)
         

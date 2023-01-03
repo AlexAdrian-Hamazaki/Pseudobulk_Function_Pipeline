@@ -42,7 +42,7 @@ coexpression_network <- build_coexp_network(expression_data,
                                             gene.list = rownames(expression_data),
                                             method = 'spearman')
 
-#coexpression_network[is.na(coexpression_network)] <- 0
+coexpression_network[is.na(coexpression_network)] <- 0
 
 
 

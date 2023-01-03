@@ -136,7 +136,7 @@ assert len(adata.layers['depth_normalized'][0].toarray()[0]) == adata.shape[1]
 
 # Make Path
 
-outpath = 'data/subsampled_normalized'
+outpath = "../../../../pipeline42/datasets/TabulaSapiens/normalized"
 if os.path.exists(outpath) == False:
     os.mkdir(outpath)
 
@@ -145,13 +145,18 @@ if os.path.exists(outpath) == False:
 
 
 # Identify File name
-split = re.split("/", path)
-filename = split[len(split)-1]
+split = re.split('/', path)
+
+comp = re.compile(".*\.h5ad")
+
+file = list(filter(comp.match, split))[0]
+
+print(file)
 
 
 # In[43]:
 
-save_path = f'{outpath}/{filename}'
+save_path = f'{outpath}/{file}'
 adata.write(save_path)
 
 
