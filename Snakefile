@@ -19,7 +19,12 @@ prefixes = [h5adfile.split(".")[0] for h5adfile in h5adfiles]
 
 rule all:
     input:
+<<<<<<< HEAD
        "data/EAGD/EGAD.csv"
+=======
+       'data/figs/auc.jpeg',
+       "data/average_counts/TS_Liver.csv"
+>>>>>>> 3c1fb065b25c7ca5703de1a68e8cd379c6c7289b
 
 
         

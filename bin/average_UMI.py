@@ -102,12 +102,21 @@ avg_gene_count = get_avg_gene_count_for_cell_type(adata = adata, cell_type_colum
 
 # Identify File name
 split = re.split('/', path)
+<<<<<<< HEAD
 
 comp = re.compile(".*\.h5ad")
 
 file = list(filter(comp.match, split))[0]
 print(f'file {file}')
 
+=======
+
+comp = re.compile(".*\.h5ad")
+
+file = list(filter(comp.match, split))[0]
+print(f'file {file}')
+
+>>>>>>> 3c1fb065b25c7ca5703de1a68e8cd379c6c7289b
 organism_part = re.sub(".h5ad", "", file)
 
 pd_avg_gene_count = pd.DataFrame(avg_gene_count, columns=gene_symbols, index=[organism_part+'_'+ct for ct in cell_types])
