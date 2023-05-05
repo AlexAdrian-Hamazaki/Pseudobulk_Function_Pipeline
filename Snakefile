@@ -5,8 +5,8 @@ import os
 import re
 
 
-path = "data/h5ad"
-files = os.listdir(path)
+files = os.listdir(config["path"])
+print(files)
 
 h5adfilesbool = [bool(re.search(".*\.h5ad", file)) for file in files]
 h5adfiles = []
@@ -17,31 +17,19 @@ for i, bool in enumerate(h5adfilesbool):
 prefixes = [h5adfile.split(".")[0] for h5adfile in h5adfiles]
 
 
-
 rule all:
     input:
-       'data/figs/auc.jpeg'
+       "data/EAGD/EGAD.csv"
 
 
         
-rule subsample:
-    input:
-        data = "data/h5ad/{h5adfile}.h5ad"
-    output:
-        "data/subsampled/{h5adfile}.h5ad"
-    params:
-        script = "bin/subsample_cells.py"
-    shell:
-        """
-        python {params.script} {input.data}
-        """
-        
+
         
 rule normalize_depth:
     input:
-        data = "data/subsampled/{h5adfile}.h5ad"
+        data = expand("{path}/{{h5adfile}}.h5ad", path=config["path"])
     output:
-        adata = "data/subsampled_normalized/{h5adfile}.h5ad"
+        adata = expand("{path}/normalized/{{h5adfile}}.h5ad", path=config["path"])
     params:
         script = "bin/normalize_depth.py"
 
@@ -52,7 +40,7 @@ rule normalize_depth:
         
 rule average_UMIs:
     input:
-        data = "data/subsampled_normalized/{h5adfile}.h5ad"
+        data = expand("{path}/normalized/{{h5adfile}}.h5ad", path=config["path"])
     output:
         organism_part_averages = "data/average_counts/{h5adfile}.csv"
     params:
@@ -73,15 +61,18 @@ rule create_pseudobulk:
 
     shell:
         """
-
+        echo {input.data}
 
         touch {output.pseudobulk}
         
         head -n 1 {input.data[0]} > {output.pseudobulk}
         
         array2=({input.data})
+        echo ${{array2}}
         
-        for file in ${{array2}}; do
+        
+        for file in ${{array2[@]}};
+        do
             echo ${{file}}
             tail -n+2  ${{file}} >> {output.pseudobulk}
         done
