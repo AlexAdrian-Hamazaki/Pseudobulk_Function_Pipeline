@@ -55,11 +55,15 @@ sample_names_df <- read.delim(sample_names, sep = ",", row.names = 1, header = T
 
 
 
+<<<<<<< HEAD
 ### Remove Organism Parts that are NOT shared between the two Tabula And Gtex Datasets
 filter_by_OP <- function(OP, expression_data) {
   expression2 <- expression_data %>%
     filter(str_detect(rownames(expression_data), paste0(OP,".*")))
   return (expression2)
+=======
+coexpression_network[is.na(coexpression_network)] <- 0
+>>>>>>> 3c1fb065b25c7ca5703de1a68e8cd379c6c7289b
 
 }
 if (is_bulk) {
