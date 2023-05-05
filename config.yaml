@@ -4,3 +4,5 @@
 # DESCRIPTION: Column in adata.obs that contains the meta-data that you will pseudobulk using. Eg If you have cell type information in a column called                                      cell_type put in the column name. Put in cell_type. Input must be string."
 
 UserInput_CellTypeColumn: "cell_ontology_class"
+
+path: "../../../../pipeline42/datasets/TabulaSapiens"

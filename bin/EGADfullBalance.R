@@ -1,6 +1,9 @@
-print("RUNNING EGAD")
+print("RUNNING EGADfullBanance")
 
-
+### THIS IS FULL BALANCED EGAD ###
+### THE NUMBER GENES USED IN BOTH SUM AND PSEUDOBULK IS THE SAME ###
+### AS A RESULT THE NUMBER OF GENES IN A GO TERM ARE EQUAL IN BOTH CASES ###
+### ALSO THE OPS ARE SAME ###
 
 packages <-installed.packages()[,"Package"]
 
@@ -13,70 +16,68 @@ library(tidyverse)
 library(stringr)
 #data_file <-snakemake@input[[1]]
 
-#Change
-save <- "~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/EAGD/EGAD_sum_pc_OPfiltered.csv"
-# data_file <- "~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/pseudobulk/sum_pseudobulk.csv"
+###Change
+#data_file <- "~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/pseudobulk/sum_pseudobulk.csv"
 #data_file <- "~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/bulk/bulk_pc.csv"
-
+data_file <- "~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/bulk/bulk_K5_pc.csv"
+save <- "~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/EAGD/EGAD_bulk5_pc_OPfilteredGeneBalanced.csv"
 is_bulk <- TRUE
 
-#Never change
+###Never change
 pc_genes <- "~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/pc_genes/processed_uniprot.csv"
 sample_names <- "~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/sample_names/bulk_pseudo.csv"
 shared_genes <- "~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/pc_genes/scAndBulkOverlapGenes.txt"
 
-#../../../../pipeline42/datasets/Gtex/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct
 
-
-
-################ 2.1 : MAKING DATA SETS
-
-########### MAKE COEXPRESSION NETWORK
-
-#~~~~~~~~~ If using file
-#expression_data <- t(read.delim('data/LiverAverageCounts.csv', sep = ',', header= TRUE, row.names = 1))
-
-
-#~~~~~~~~ Diagnostic WD
-
-#getwd()
-
-#~~~~~~~~~If using command line
-
-#args = commandArgs(trailingOnly=TRUE)
-#data_file <- args[1]
+print("Printing Parameters")
+print(data_file)
+print(save)
+print(is_bulk)
 
 
 print("Loading Expression Dataset")
-
-expression_data <- (read.delim(data_file, sep = ',', header= TRUE, row.names = 1))
+expression_data <- read.delim(data_file, sep = ',', header= TRUE, row.names = 1)
 sample_names_df <- read.delim(sample_names, sep = ",", row.names = 1, header = TRUE)
 
+## Just for the K20, just test the OPs that are shared
+expression_data <- expression_data %>%
+  filter(SMTS %in%  sample_names_df$bulk_names)
 
+
+nlen <- ncol(expression_data)
+print("Remove out the genes that were not measured in both datasets")
+# Remove out the genes that were not measured in all.
+sharedGenes <- read_csv(file =shared_genes, col_names = FALSE)
+
+expression_data <- expression_data[, colnames(expression_data) %in% sharedGenes$X1] # in bulk this only removes a couple but for sc it will remove a lot
+print(paste("Removed", nlen-ncol(expression_data),"non shared genes"))
 
 
 ### Remove Organism Parts that are NOT shared between the two Tabula And Gtex Datasets
-filter_by_OP <- function(OP, expression_data) {
-  expression2 <- expression_data %>%
-    filter(str_detect(rownames(expression_data), paste0(OP,".*")))
-  return (expression2)
+# filter_by_OP <- function(OP, expression_data) {
+#   expression2 <- expression_data %>%
+#     filter(str_detect(rownames(expression_data), paste0(OP,".*")))
+#   return (expression2)
+# 
+# }
+# if (is_bulk) {
+#   print('Subsampling for Bulk name Organism Parts')
+#   OP_names <- sample_names_df$bulk_names
+#   expression_data <- expression_data %>%
+#     filter(rownames(expression_data) %in% OP_names)
+# } else {
+#   print('Subsampling for Pseudobulk name Organism Parts')
+# 
+#   OP_names <- sample_names_df$pseudo_names
+# 
+# 
+#   expression_data_2 <- lapply(OP_names, filter_by_OP, expression_data)
+#   
+#   expression_data <- do.call(rbind, expression_data_2)
+#   }
+# head(expression_data)
+# expression_data$SMTS
 
-}
-if (is_bulk) {
-  print('Subsampling for Bulk name Organism Parts')
-  OP_names <- sample_names_df$bulk_names
-  expression_data <- expression_data %>%
-    filter(rownames(expression_data) %in% OP_names)
-} else {
-  print('Subsampling for Pseudobulk name Organism Parts')
-
-  OP_names <- sample_names_df$pseudo_names
-
-
-  expression_data_2 <- lapply(OP_names, filter_by_OP, expression_data)
-  
-  expression_data <- do.call(rbind, expression_data_2)
-  }
 
 
 print("Filtering Expression Data for PC genes")
@@ -85,7 +86,7 @@ pc_names <- pc$FirstUniprot
 pc_expression <- expression_data[,colnames(expression_data) %in% pc_names]
 print(paste("Removed",ncol(expression_data)- ncol(pc_expression) , "non-protein coding genes"))
 
-
+colnames(expression_data)
 
 
 ######### Build Coexpression Network
@@ -103,19 +104,25 @@ print("Building Annotation Set")
 ### With Custom GO with BP
 GO <- read.delim(file = '~/Masters/Pseudobulk_Function_Pipeline_HighRes/data/GO/pro_GO.csv', sep = ",", stringsAsFactors = TRUE)
 
-# Filter the GO to Gene pairings for only Genes measured in our expression data because we only want GO terms with 20>= genes
+# Remove instances where GO.ID, DB_Object_Name are duplicated
+GO<- GO[!duplicated(GO), ]
+
+
+# Filter the GO to Gene pairings for only Genes measured in our expression data because we only want GO terms with 20>= genes that we actually measured
 expression_genes <- colnames(expression_data)
-GO <- filter(GO, GO$DB_Object_Symbol %in% expression_genes) 
+GO <- filter(GO, GO$DB_Object_Symbol %in% expression_genes)
 #in our sc data this removes ~3,000 genes
 #in bulk this removes ~16000 genes sheesh
 
 # Filter for only the genes that are measured in both data types (note this is redudant with the prev step now)
-sharedGenes <- read_csv(file =shared_genes, col_names = FALSE)
 GO <- filter(GO, GO$DB_Object_Symbol %in%sharedGenes$X1)
 
+# Count the number of times a gene is ain a GO term
 GO_unique <- data.frame(table(GO$GO.ID))
 colnames(GO_unique) <- c('GO', 'count')
 
+test <- GO%>%
+  filter(GO.ID == "GO:0072488")
 
 # Create a histogram looking at how many genes are affiliated with each GO term
 ggplot(data = GO_unique)+ 
@@ -147,7 +154,6 @@ GO_20_or_more <-dplyr::filter(GO, (GO$GO.ID %in% GO_unique_filtered$GO))
 1-nrow(GO_20_or_more)/nrow(GO) #44.9% of Gene to Go Term assosiations were for GO terms with less than 20 genes.  45% in bulk
 
 #Note: We removed 86.2% of GO terms, this onyl removed 31.5% of GO to gene assosiations
-
 
 #Make one hot encoding matrix
 # Contains only GO terms with 20 genes or more that were measured in both datasets
