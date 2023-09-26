@@ -1,6 +1,6 @@
 
 process makeCTProfiles {
-    publishDir "data/CTProfiles", mode: 'copy'
+    publishDir "${params.publish}/CTProfiles", mode: 'copy'
     conda params.python3_9
     
     input:
@@ -14,7 +14,7 @@ process makeCTProfiles {
 }
 
 process simBulk {
-    publishDir "data/simulations/${variance_ch}/${cell_type_profiles_csv}", mode: "copy"
+    publishDir "${params.publish}/simulations/${variance_ch}/${cell_type_profiles_csv}", mode: "copy"
     conda params.python3_9
     
     input:
@@ -37,7 +37,7 @@ process sim_bulk_EGAD {
     memory '32 GB'
     maxForks 12
 
-    publishDir "data/EGAD/${variance_ch}/${expression_matrix.getBaseName()}", mode: 'copy'
+    publishDir "${params.publish}/EGAD/${variance_ch}/${expression_matrix.getBaseName()}", mode: 'copy'
 
     input:
         tuple val(variance_ch), path(expression_matrix), path(go_annotations_ch)
