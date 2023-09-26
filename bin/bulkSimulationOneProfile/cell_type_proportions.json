@@ -1,0 +1,21 @@
+{
+    "pbmc_sc_with_metadata_cpm_pc_cell_type_profiles.csv": {
+        "B-cells": 0.05,
+        "Dendritic cells": 0.05,
+        "Macrophages": 0.20,
+        "Monocytes": 0.05,
+        "Nk-cells": 0.10,
+        "Platelets": 0.05,
+        "T-cells": 0.50
+    },
+
+    "brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv":{
+        "Astrocytes": 0.05,
+        "Excitatory neurons": 0.50,
+        "Inhibitory neurons": 0.30,
+        "Microglial cells": 0.05,
+        "Oligodendrocyte precursor cells": 0.05,
+        "Oligodendrocytes": 0.05
+    }
+
+}
