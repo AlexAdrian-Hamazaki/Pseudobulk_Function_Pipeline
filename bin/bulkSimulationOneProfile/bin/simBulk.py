@@ -6,13 +6,13 @@ import pandas as pd
 import json
 import random
 import scanpy as sc
-
+import numpy as np
 
 def main():
     CTProfile_path = sys.argv[1]
     CTProfile_name = sys.argv[2]
     proportions_json_path = sys.argv[3]
-    variance_factor = sys.argv[4]
+    variance_factor = float(sys.argv[4])
     num_simulations = 100
     totalSampleSize = 1000
     
@@ -23,25 +23,31 @@ def main():
     dictBaselineProportion = getBaselineProportion(CTProfile_name=CTProfile_name, proportions_json_path=proportions_json_path)
     
     
-    # Initiate a list to hold a list to hold lists, where each list contains how many cells of each cell type to sample for a given simulation
-    loloCellTypeCompositions = []
+
     
     # Where each element in the list is the cell type proportions I'm going for
+    # Get a list of dictionaries where each dictionary defines the proportions of cell types we need to sample to make our simulated bulk sample Keys are the cell type and values are the proportion of what our 
+    # simulated bulk sample should look like
     
-    for num_simulation in range(1, num_simulations+1):
-        cellTypeComposition = getNumberToSubsample(dictBaselineProportion = dictBaselineProportion,
-                                                   totalSampleSize= totalSampleSize,
-                                                   variance_factor = variance_factor)
+    loDictsCellTypeProportions = getDictsOfCellTypeProportions(num_simulations,
+                                                               dictBaselineProportion,
+                                                               totalSampleSize,
+                                                               variance_factor)
 
-        loloCellTypeCompositions.append(cellTypeComposition)
-        
+
+    # Actually get the number of cells we need to sample for each simulated bulk dataset
+    loDictsNumberOfCells = [getNumberToSample(dictCellTypeProportion, totalSampleSize=totalSampleSize) for dictCellTypeProportion in loDictsCellTypeProportions]
+    
+    # Turn all the dictionaries into pandas series
+    loSerNumberOfCells = [pd.Series(dictNumberOfCells) for dictNumberOfCells in loDictsNumberOfCells]
+    
         
     # For each of the cell type compositions, get a simulated single cell dataset.
-    loloCellTypeProfiles = [simulateBulk(cellTypeComposition, df = df) for cellTypeComposition in loloCellTypeCompositions]
-    print(len(loloCellTypeProfiles))
+    loSerCellTypeProfiles = [simulateBulk(cellTypeComposition, df = df) for cellTypeComposition in loSerNumberOfCells]
+    
     
     # For each simulated single cell dataset, collapse into one single simulted bulk sample
-    loSimulatedBulkSamples = [collapseSimulation(loCellTypeProfiles) for loCellTypeProfiles in loloCellTypeProfiles]
+    loSimulatedBulkSamples = [collapseSimulation(loCellTypeProfiles) for loCellTypeProfiles in loSerCellTypeProfiles]
     print(len(loSimulatedBulkSamples))
     
     
@@ -53,8 +59,126 @@ def main():
     df_simulatedBulkDataset.to_csv(f'{CTProfile_name}.csv.gz', compression='gzip')
     
     # Also write the compositons for each of the simulated bulk dataset
-    for i, composition in enumerate(loloCellTypeCompositions):
+    for i, composition in enumerate(loSerNumberOfCells):
         composition.to_csv(f'{CTProfile_name}_n_sim_{i}_profiles.csv', index=True)
+        
+def getProportionToSample(dictBaselineProportion:dict,  variance_factor:float, totalSampleSize:int) -> pd.Series:
+    """For one tissue, and given the number of unique cell types, and given a total sample size for our simulated bulk,
+    identify how many cells of each cell type we want to sample"
+    
+    The default number of cells you want to sample will be based on the dictbaselineProportion, the default percent composition that I'm setting for each cell type
+
+    Args:
+        dictBaselineProportion:dict: A dict where keys are cell types, and values are the default percent composition of that cell type.
+        totalSampleSize (int): The total number of cells we want in each simulated bulk dataset
+        variance_factor (float): The amount of the compositional effect we want to simulate. There is actually a direct interpretation of this number though. For a simulated bulk of 4 cell types and for 100 samples, \
+            a variance of 0.01 indicates that the composition of each cell type can differ by 1% of the total number of cells. \
+                For example, with zero composition effect, each cell type would have 25,25,25,25 cells. With variance=0.01, \
+                    the number of cells in each cell type can vary by 100*0.01 = 1 cell. So each cell type could have
+                    24-26 cells in it
+
+    Returns:
+        pd.Series: Named series, has the proportions
+    """
+    
+    
+    dict_ProportionToSample = {}  # dict to store the number of cells for each cell type. Keys are the cell type, and values are the number of cells of that cell type to sample
+
+    # Get all the keys (cell types)
+    loKeys = list(dictBaselineProportion.keys())
+    
+    # Loop through each cell type
+    for key in loKeys:
+
+        proportion_to_sample = getProportionCellsToSample(baseline_cell_proportion=dictBaselineProportion[key], variance_factor=variance_factor)
+        
+        
+        # Add this number to our dictionary which contains the number of cels to sample for this simulated bulk sample
+        dict_ProportionToSample [key] = proportion_to_sample
+        
+    # Scale the proportions to summarize to 1
+    scaled_dict_ProportionsToSample = scaleDictTo1(dict_ProportionToSample)
+    
+    # round based on the number of sig figs we have in totalSampleSize
+    scaled_dict_ProportionsToSample = roundToSigFigs(scaled_dict_ProportionsToSample=scaled_dict_ProportionsToSample, totalSampleSize=totalSampleSize)
+    
+    return  scaled_dict_ProportionsToSample
+
+def getProportionCellsToSample(baseline_cell_proportion:float, variance_factor:float):
+
+    proportion_to_sample = np.random.normal(baseline_cell_proportion, float(variance_factor)*float(baseline_cell_proportion), size = 1)
+    return proportion_to_sample[0] # Return first element because we want a float not a np array
+
+def roundToSigFigs(scaled_dict_ProportionsToSample:dict, totalSampleSize:int):
+    
+    for key in list(scaled_dict_ProportionsToSample.keys()):
+        scaled_dict_ProportionsToSample[key] = round(scaled_dict_ProportionsToSample[key], len(str(totalSampleSize)))
+        
+    return scaled_dict_ProportionsToSample
+
+def scaleDictTo1(dict_ProportionToSample:dict):
+    """Scale dictionary values such that the sum of the dict is equal to 1
+
+    Args:
+        dict_ProportionToSample (dict): Contaisn the proportions of cel ltypes we need to sample
+        
+    Returns:
+        scaled_dict(dict): the scaled dict where the proportions sum to 1
+    """
+    total_sum = sum(dict_ProportionToSample.values())
+
+    scaled_dict = {key: value/total_sum for key,value in dict_ProportionToSample.items()}
+    
+    return scaled_dict
+
+
+def getShuffledKeys(dict):
+    """Randomly shuffle keys and return them as a list
+    
+
+    Args:
+        dict (_type_): _description_
+    """
+    
+    # Get the keys view and convert it to a list
+    keys_list = list(dict.keys())
+    
+    # Shuffle the keys list randomly
+    random.shuffle(keys_list)
+    
+    
+    return keys_list
+
+
+        
+def getBaselineProportion(CTProfile_name:str, proportions_json_path:json) -> dict:
+    """Get the list of proper cell type baseline proportions depending on if we are using brain or pbmc
+
+    Args:
+        CTProfile_name (str): name of the dataframe of cell type profiles
+        proportions_json (json): json that contains baseline cell type profiles for brian or pbmc
+
+    Returns:
+        dict: A dict where keys are cell types, and values are their expected baseline proportions
+    """
+    
+    # open json file
+    with open(proportions_json_path, 'r') as json_file:
+        dict_propostions_json = json.load(json_file)
+    
+        print(dict_propostions_json)
+    
+    # Get the correct key
+    for key in dict_propostions_json.keys():
+        if key == CTProfile_name:
+            correct_key = key
+    # If no key was found,raise error
+    if not correct_key:
+        raise ValueError("Key not found")
+    
+    # Return the proportions of cell types based on our key (which is a tissue type)
+    return dict_propostions_json[correct_key]
+
     
 def collapseSimulation(df: pd.DataFrame) -> pd.Series:
     """Each dataframe is a bunch of cell type profiles.
@@ -70,9 +194,84 @@ def collapseSimulation(df: pd.DataFrame) -> pd.Series:
     
     return df.sum(axis = 0)
 
+def getNumberToSample(dictCellTypeProportion:dict, totalSampleSize:int) -> dict:
+    """Given a dictionary of cell type proportions and a total sample size, get the total number of cells to subsmaple
+
+    Args:
+        dictCellTypeProportion (dict): _description_
+
+    Returns:
+        dict: values are total number of cells
+    """
+    dictNumberToSample = {}
+    
+    for key in dictCellTypeProportion:
+        dictNumberToSample[key] = int(dictCellTypeProportion[key] * totalSampleSize)
+        
+    # If the sum of cells the dictionary is not equal to the totalSampleSize then re-scale
+    if int(sum(dictNumberToSample.values())) != int(totalSampleSize):
+        dictNumberToSample = fixRoundingProblem(dictNumberToSample, totalSampleSize)
+        
+    return dictNumberToSample
+
+def fixRoundingProblem(dictNumberToSample, totalSampleSize):
+    """The values in this dict should add upto the totalSampleSize. If they don't then fix the rounding problems by adding or subtracting cells
+
+    Args:
+        dictNumberToSample (_type_): _description_
+    """
+    # Calculate the remaining difference between the dictionary and the totals ample size
+    remaining_difference = totalSampleSize - sum(dictNumberToSample.values())
+    
+    # If the remaining difference is 0. Then exit the recursion by returning the final dict
+    if remaining_difference == 0:
+        return dictNumberToSample
+    
+    # If the remaining difference is positive, then we need to add cells randomly to the dictionary
+    elif remaining_difference > 0:
+        # randomly get a key
+        key = np.random.choice(list(dictNumberToSample.keys()))
+    
+        # Add one cell to the dictionary
+        dictNumberToSample[key] +=1
+        
+        return fixRoundingProblem(dictNumberToSample, totalSampleSize)
+        
+    # If the remining difference is negative, then that means we need to randomly remove a cell
+    elif remaining_difference < 0:
+        # randomly get a key
+        key = np.random.sample(list(dictNumberToSample.keys()))
+    
+        # Add one cell to the dictionary
+        dictNumberToSample[key] -=1
+        
+        return fixRoundingProblem(dictNumberToSample, totalSampleSize)
+        
+
+    
+    
+
+def getDictsOfCellTypeProportions(num_simulations:int,
+                                dictBaselineProportion:dict,
+                                totalSampleSize:int,
+                                variance_factor:float):
+    
+    # Initiate a list to hold dictionaries, where each dictionary cotnains the proportions of cells we need to sample to create a simulated bulk sample
+    loDictsCellTypeProportions = []
+        
+        
+    for num_simulation in range(1, num_simulations+1):
+        dict_cellTypeComposition = getProportionToSample(dictBaselineProportion = dictBaselineProportion,
+                                                   variance_factor = variance_factor,
+                                                   totalSampleSize=totalSampleSize)
+
+        loDictsCellTypeProportions.append(dict_cellTypeComposition)
+    
+    return loDictsCellTypeProportions
+
 def simulateBulk(cellTypeComposition: pd.Series, df:pd.DataFrame) -> pd.DataFrame:
     """
-    Subsamples an dataframe based on a given cell type composition. 
+    Subsamples an dataframe of cell type profiles based on a given cell type composition. 
     
     Returns an pdDataframe object that is basically a simulated bulk dataset
     """
@@ -111,7 +310,8 @@ def repeatCellTypes(df:pd.DataFrame, cell_type:str, n_cells:int) -> pd.DataFrame
     Returns:
         pd.DataFrame: _description_
     """
-    
+    print(cell_type)
+    print(n_cells)
     # First filter the df for that cell type. This will be a series
     cell_type_series = df[df.index  == cell_type]
     
@@ -131,6 +331,8 @@ def repeatCellTypes(df:pd.DataFrame, cell_type:str, n_cells:int) -> pd.DataFrame
     # print(n_cells)
     # print(df.index)
     # Add the row n_cells-1 number of times 
+    print("!!!!!!!!!!!!")
+    print(type(n_cells))
     for _ in range(n_cells):
         lo_CellTypeSeries.append(cell_type_series)
         
@@ -167,100 +369,12 @@ def getSeed():
     
     return random_seed
 
-def getNumberToSubsample(dictBaselineProportion:dict, totalSampleSize:int, variance_factor:float) -> pd.Series:
-    """For one tissue, and given the number of unique cell types, and given a total sample size for our simulated bulk,
-    identify how many cells of each cell type we want to sample"
-    
-    The default number of cells you want to sample will be based on the dictbaselineProportion, the default percent composition that I'm setting for each cell type
 
-    You first have to randomly shuffle the proportions dict though, otherwise at high variances the final cell type never gets sampled
-
-
-    Args:
-        dictBaselineProportion:dict: A dict where keys are cell types, and values are the default percent composition of that cell type.
-        totalSampleSize (int): The total number of cells we want in each simulated bulk dataset
-        variance_factor (float): The amount of the compositional effect we want to simulate. There is actually a direct interpretation of this number though. For a simulated bulk of 4 cell types and for 100 samples, \
-            a variance of 0.01 indicates that the composition of each cell type can differ by 1% of the total number of cells. \
-                For example, with zero composition effect, each cell type would have 25,25,25,25 cells. With variance=0.01, \
-                    the number of cells in each cell type can vary by 100*0.01 = 1 cell. So each cell type could have
-                    24-26 cells in it
-
-    Returns:
-        pd.Series: Named series, has the number of cells that each cell type needs to have.
-    """
-    
-    
-    dictNumberOfSamples = {}  # dict to store the number of cells for each cell type. Keys are the cell type, and values are the number of cells of that cell type to sample
-    remaining_samples = totalSampleSize  # Initialize remaining samples to the total number. This is a counter 
-
-    # GEt the number of unique cell types
-    n_cell_types = len(dictBaselineProportion.keys())
-    
-    # Iniaite a counter to see how many cell types we've subsampled
-    n = 0
-    
-    # Randomly shuffle all the dictionary keys
-    loKeys = getShuffledKeys(dictBaselineProportion)
-    
-    # Loop through each cell type
-    for key in loKeys:
-        
-        # uptick counter
-        n+=1
-        
-        # Get the baseline number of cells.
-        baselineCells = dictBaselineProportion[key] * totalSampleSize
-        
-        # Generate the minumim and maximum number of cells that we could get for this cell type
-        min_samples = max(0, baselineCells - float(variance_factor) * float(totalSampleSize))
-        max_samples = float(baselineCells) + float(variance_factor) * float(totalSampleSize) # If the number of remaining samples is less than variance. Then just use the remaining samples
-        
-        # We are on our last Cell Type. Set the number of cells to sample as the remaining cells. Unless that number is below 0. Then make the number of cells to sample 0
-        if n == n_cell_types:
-            num_samples = remaining_samples
-            if num_samples < 0:
-                num_samples = 0
-        else:
-            # Get the number of cells we will sample
-            num_samples = int(random.uniform(min_samples, max_samples))
-    
-        
-        # turn it into an int
-        num_samples = int(num_samples)
-        
-        if num_samples < 0:
-            raise ValueError("Number of cells to sample shuld not be negative")
-        
-        # Add the number of samples we will sample to the list
-        dictNumberOfSamples[key] = num_samples
-    
-        # Remove these samples
-        remaining_samples -= num_samples  # Subtract the allocated samples from the remainin
-    
-    return pd.Series(dictNumberOfSamples, name = 'numbers_to_sample')
-    
-def getShuffledKeys(dict):
-    """Randomly shuffle keys and return them as a list
-    
-
-    Args:
-        dict (_type_): _description_
-    """
-    
-    # Get the keys view and convert it to a list
-    keys_list = list(dict.keys())
-    
-    # Shuffle the keys list randomly
-    random.shuffle(keys_list)
-    
-    
-    return keys_list
     
     
 def getBaselineProportion(CTProfile_name:str, proportions_json_path:json) -> dict:
     """Get the list of proper cell type baseline proportions depending on if we are using brain or pbmc
 
-    
     Args:
         CTProfile_name (str): name of the dataframe of cell type profiles
         proportions_json (json): json that contains baseline cell type profiles for brian or pbmc
@@ -286,6 +400,11 @@ def getBaselineProportion(CTProfile_name:str, proportions_json_path:json) -> dic
     
     # Return the proportions of cell types based on our key (which is a tissue type)
     return dict_propostions_json[correct_key]
+
+    
+    
+    
+    
 
     
     
