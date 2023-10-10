@@ -7,13 +7,15 @@ import json
 import random
 import scanpy as sc
 import numpy as np
+import math
+
 
 def main():
     CTProfile_path = sys.argv[1]
     CTProfile_name = sys.argv[2]
     proportions_json_path = sys.argv[3]
     variance_factor = float(sys.argv[4])
-    num_simulations = 100
+    num_simulations = 150
     totalSampleSize = 1000
     
     # open cell type profile database
@@ -48,12 +50,10 @@ def main():
     
     # For each simulated single cell dataset, collapse into one single simulted bulk sample
     loSimulatedBulkSamples = [collapseSimulation(loCellTypeProfiles) for loCellTypeProfiles in loSerCellTypeProfiles]
-    print(len(loSimulatedBulkSamples))
     
     
     # Make a simulated bulk dataset where each row is a simulated bulk sample
     df_simulatedBulkDataset = pd.concat(loSimulatedBulkSamples, axis = 1)
-    print(df_simulatedBulkDataset)
     
     # Save the bulk simulated dataset
     df_simulatedBulkDataset.to_csv(f'{CTProfile_name}.csv.gz', compression='gzip')
@@ -96,6 +96,15 @@ def getProportionToSample(dictBaselineProportion:dict,  variance_factor:float, t
         # Add this number to our dictionary which contains the number of cels to sample for this simulated bulk sample
         dict_ProportionToSample [key] = proportion_to_sample
         
+    # Remove proportions that are Negative (done before scaling to 1). Negatives will be reset to 0
+    dict_ProportionToSample = removeNegatives(dict_ProportionToSample)
+    
+    # When the variance is relaly high, sometimes NO cells will be sampled from the method above. In this case, just choose to only sample 1 cell to the total smaple size
+    if sum(dict_ProportionToSample.values()) == 0:
+        random_key = np.random.choice(list(dict_ProportionToSample.keys()))
+        dict_ProportionToSample[random_key] = totalSampleSize
+    
+       
     # Scale the proportions to summarize to 1
     scaled_dict_ProportionsToSample = scaleDictTo1(dict_ProportionToSample)
     
@@ -104,9 +113,20 @@ def getProportionToSample(dictBaselineProportion:dict,  variance_factor:float, t
     
     return  scaled_dict_ProportionsToSample
 
+def removeNegatives(dict_ProportionToSample):
+    
+    """Sets negative values to for a dictionary
+    """
+    
+    for key in list(dict_ProportionToSample.keys()):
+        if dict_ProportionToSample[key] <0:
+            dict_ProportionToSample[key] = 0
+                
+    return dict_ProportionToSample
+
 def getProportionCellsToSample(baseline_cell_proportion:float, variance_factor:float):
 
-    proportion_to_sample = np.random.normal(baseline_cell_proportion, float(variance_factor)*float(baseline_cell_proportion), size = 1)
+    proportion_to_sample = np.random.normal(baseline_cell_proportion, 0.001 + (float(variance_factor) * math.sqrt(baseline_cell_proportion)), size = 1)
     return proportion_to_sample[0] # Return first element because we want a float not a np array
 
 def roundToSigFigs(scaled_dict_ProportionsToSample:dict, totalSampleSize:int):
@@ -166,7 +186,6 @@ def getBaselineProportion(CTProfile_name:str, proportions_json_path:json) -> dic
     with open(proportions_json_path, 'r') as json_file:
         dict_propostions_json = json.load(json_file)
     
-        print(dict_propostions_json)
     
     # Get the correct key
     for key in dict_propostions_json.keys():
@@ -240,7 +259,7 @@ def fixRoundingProblem(dictNumberToSample, totalSampleSize):
     # If the remining difference is negative, then that means we need to randomly remove a cell
     elif remaining_difference < 0:
         # randomly get a key
-        key = np.random.sample(list(dictNumberToSample.keys()))
+        key = np.random.choice(list(dictNumberToSample.keys()))
     
         # Add one cell to the dictionary
         dictNumberToSample[key] -=1
@@ -266,6 +285,7 @@ def getDictsOfCellTypeProportions(num_simulations:int,
                                                    totalSampleSize=totalSampleSize)
 
         loDictsCellTypeProportions.append(dict_cellTypeComposition)
+        
     
     return loDictsCellTypeProportions
 
@@ -310,8 +330,7 @@ def repeatCellTypes(df:pd.DataFrame, cell_type:str, n_cells:int) -> pd.DataFrame
     Returns:
         pd.DataFrame: _description_
     """
-    print(cell_type)
-    print(n_cells)
+
     # First filter the df for that cell type. This will be a series
     cell_type_series = df[df.index  == cell_type]
     
@@ -331,8 +350,7 @@ def repeatCellTypes(df:pd.DataFrame, cell_type:str, n_cells:int) -> pd.DataFrame
     # print(n_cells)
     # print(df.index)
     # Add the row n_cells-1 number of times 
-    print("!!!!!!!!!!!!")
-    print(type(n_cells))
+
     for _ in range(n_cells):
         lo_CellTypeSeries.append(cell_type_series)
         

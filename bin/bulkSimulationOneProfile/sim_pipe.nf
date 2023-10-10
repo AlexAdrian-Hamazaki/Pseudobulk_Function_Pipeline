@@ -1,7 +1,7 @@
 
 process makeCTProfiles {
     publishDir "${params.publish}/CTProfiles", mode: 'copy'
-    conda params.python3_9
+    conda params.python3_9 
     
     input:
         path h5ad_path
@@ -14,6 +14,11 @@ process makeCTProfiles {
 }
 
 process simBulk {
+    cpus 2
+    memory '32 GB'
+    executor "local"
+    maxForks 1
+
     publishDir "${params.publish}/simulations/${variance_ch}/${cell_type_profiles_csv}", mode: "copy"
     conda params.python3_9
     
