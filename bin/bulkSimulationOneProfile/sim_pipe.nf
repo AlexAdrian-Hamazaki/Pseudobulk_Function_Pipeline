@@ -55,6 +55,49 @@ process sim_bulk_EGAD {
     '''
 }
 
+// process checkConsistantSampling {
+//     publishDir "${params.publish}/graphs/consistant_sampling", mode: "copy"
+//     conda params.python3_9
+    
+//     input:
+//         path lo_sc_with_metadata_cpm_pc_cell_type_profiles.csv
+//     output:
+//         path <NAME>
+//     shell:
+//     '''
+//     <SCRIPT>
+//     '''
+// }
+
+// process checkIndividualVariancePatterns {
+//     publishDir <path>, mode: 'copy'
+//     conda <path>
+    
+//     input:
+//         path <NAME>
+//     output:
+//         path <NAME>
+//     shell:
+//     '''
+//     <SCRIPT>
+//     '''
+// }
+
+
+// process graphEGAD {
+//     publishDir <path>, mode: 'copy'
+//     conda <path>
+    
+//     input:
+//         path <NAME>
+//     output:
+//         path <NAME>
+//     shell:
+//     '''
+//     <SCRIPT>
+//     '''
+// }
+
 
 tissue_ch = Channel.fromPath(params.tissue_dir)
 cell_type_proportions = Channel.fromPath(params.cell_type_proportions)
