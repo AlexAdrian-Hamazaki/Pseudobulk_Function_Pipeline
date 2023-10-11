@@ -15,12 +15,12 @@ GO_annot_path_name <- args[[4]]
 # what the gene names are in the expression matrix g
 GO_annot_gene_column <- args[[5]]
 
-expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/please_work/simulations/0.2/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv.gz"
-expression_matrix_name <- "test0"
-#expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulations/data/simulated_bulk_dataset/brain_sc_with_metadata_cpm_pc.h5ad/simulated_ss100_var0.01_nsim10.csv"
-GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
-GO_annot_path_name <- "bp"
-GO_annot_gene_column <- "ensembl_gene_id"
+# expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/please_work/simulations/0.2/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv.gz"
+# expression_matrix_name <- "test0"
+# #expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulations/data/simulated_bulk_dataset/brain_sc_with_metadata_cpm_pc.h5ad/simulated_ss100_var0.01_nsim10.csv"
+# GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
+# GO_annot_path_name <- "bp"
+# GO_annot_gene_column <- "ensembl_gene_id"
 
 #GO_annot_gene_column <- "DB_Object_Symbol"
 
@@ -29,6 +29,7 @@ library(EGAD)
 library(tidyverse)
 library(stringr)
 
+print(paste("Performing EGAD on", expression_matrix_path))
 
 ################ 2.1 : MAKING DATA SETS
 
