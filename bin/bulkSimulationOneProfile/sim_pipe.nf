@@ -29,7 +29,7 @@ process simBulk {
     output:
         tuple val(variance_ch), path("${cell_type_profiles_csv.getSimpleName()}.csv.gz")
         path "${cell_type_profiles_csv.getSimpleName()}_n_sim_*_profiles.csv"
-
+        path "${cell_type_profiles_csv.getSimpleName()}_n_sim_*_profiles_uncollapsed.csv"
     shell:
     '''
     simBulk.py !{cell_type_profiles_csv} !{cell_type_profiles_csv.getSimpleName()} !{cell_type_proportions} !{variance_ch}

@@ -24,9 +24,6 @@ def main():
     # Retreive the baseline proportions from the proportions_json
     dictBaselineProportion = getBaselineProportion(CTProfile_name=CTProfile_name, proportions_json_path=proportions_json_path)
     
-    
-
-    
     # Where each element in the list is the cell type proportions I'm going for
     # Get a list of dictionaries where each dictionary defines the proportions of cell types we need to sample to make our simulated bulk sample Keys are the cell type and values are the proportion of what our 
     # simulated bulk sample should look like
@@ -44,16 +41,16 @@ def main():
     loSerNumberOfCells = [pd.Series(dictNumberOfCells) for dictNumberOfCells in loDictsNumberOfCells]
     
         
-    # For each of the cell type compositions, get a simulated single cell dataset.
-    loSerCellTypeProfiles = [simulateBulk(cellTypeComposition, df = df) for cellTypeComposition in loSerNumberOfCells]
-    
+    # For each of the cell type compositions, get a simulated single cell dataset that is uncollapsed
+    loUncollapsedSimulatedBulkSamples = [simulateBulk(cellTypeComposition, df = df) for cellTypeComposition in loSerNumberOfCells]
     
     # For each simulated single cell dataset, collapse into one single simulted bulk sample
-    loSimulatedBulkSamples = [collapseSimulation(loCellTypeProfiles) for loCellTypeProfiles in loSerCellTypeProfiles]
+    loSimulatedBulkSamples = [collapseSimulation(loCellTypeProfiles) for loCellTypeProfiles in loUncollapsedSimulatedBulkSamples]
     
     
     # Make a simulated bulk dataset where each row is a simulated bulk sample
     df_simulatedBulkDataset = pd.concat(loSimulatedBulkSamples, axis = 1)
+    
     
     # Save the bulk simulated dataset
     df_simulatedBulkDataset.to_csv(f'{CTProfile_name}.csv.gz', compression='gzip')
@@ -61,6 +58,10 @@ def main():
     # Also write the compositons for each of the simulated bulk dataset
     for i, composition in enumerate(loSerNumberOfCells):
         composition.to_csv(f'{CTProfile_name}_n_sim_{i}_profiles.csv', index=True)
+    
+    # Also save the initial simulated bulks that are not collapsed
+    for i, uncollapsedSimulatedBulkSample in enumerate(loUncollapsedSimulatedBulkSamples):
+        uncollapsedSimulatedBulkSample.to_csv(f'{CTProfile_name}_n_sim_{i}_profiles_uncollapsed.csv', index=True)
         
 def getProportionToSample(dictBaselineProportion:dict,  variance_factor:float, totalSampleSize:int) -> pd.Series:
     """For one tissue, and given the number of unique cell types, and given a total sample size for our simulated bulk,
@@ -126,7 +127,7 @@ def removeNegatives(dict_ProportionToSample):
 
 def getProportionCellsToSample(baseline_cell_proportion:float, variance_factor:float):
 
-    proportion_to_sample = np.random.normal(baseline_cell_proportion, 0.001 + (float(variance_factor) * math.sqrt(baseline_cell_proportion)), size = 1)
+    proportion_to_sample = np.random.normal(baseline_cell_proportion, 0.001 + (float(variance_factor) * float(baseline_cell_proportion)), size = 1)
     return proportion_to_sample[0] # Return first element because we want a float not a np array
 
 def roundToSigFigs(scaled_dict_ProportionsToSample:dict, totalSampleSize:int):
@@ -294,44 +295,58 @@ def simulateBulk(cellTypeComposition: pd.Series, df:pd.DataFrame) -> pd.DataFram
     Subsamples an dataframe of cell type profiles based on a given cell type composition. 
     
     Returns an pdDataframe object that is basically a simulated bulk dataset
+    
+    cellTypeComposition = series where indexes are cell type, and value is the number of cells of that cell type to sample
+    df =  cell type profile database
     """
     
-    loCells = [] # Holds the subsampled cells from a variety of cell types
+    print(f"Cell type composition {cellTypeComposition}")
+    print(f'df {df.head()}')
+    
+    loSubsampledCells = [] # Holds cell type profiles that have been multiplied by a scalar value (this is the same as sampling the cell n numer of times and then taking the sum.)
     
     for i, n_cells in enumerate(cellTypeComposition):
         
         # get the cell type we need to sample
         cell_type = cellTypeComposition.index[i]
+        print(f'cell type {cell_type}')
+        print(f'n_cells {n_cells}')
+        #
         
         # For each cell type, sample that number of cells from "df"
-        df_cells = repeatCellTypes(df = df, cell_type=cell_type, n_cells=n_cells)
+        cell_type_profile_multiplied = repeatCellTypes(df = df, cell_type=cell_type, n_cells=n_cells)
+        
+        print(f'multiplied profile {cell_type_profile_multiplied}')
+        
         
         # print diagnostic
-        print(f'{df_cells.shape[0]} cells of {cell_type} were subsampled')
+        #print(f'{df_cells.shape[0]} cells of {cell_type} were subsampled')
         
         # Append those cells to our list of cells but only if the df_cells is not empty. If its empty then we did not smaple any of those cell types
-        if df_cells.empty == False:
-            loCells.append(df_cells)
+        if len(cell_type_profile_multiplied) != 0:
+            loSubsampledCells.append(cell_type_profile_multiplied)
     
     # Merge the list of dataframes into one large dataframe. This is one simulated sample that has yet to be compacted
-    df_simulatedBulk = pd.concat(loCells, axis = 0)
+    df_simulatedBulk_uncollapsed = pd.concat(loSubsampledCells, axis = 0)
         
-    return df_simulatedBulk
+    print(df_simulatedBulk_uncollapsed.head())
+    
+    return df_simulatedBulk_uncollapsed
         
-def repeatCellTypes(df:pd.DataFrame, cell_type:str, n_cells:int) -> pd.DataFrame:
-    """For the df, which just has cell type profiles. return a dataframe with n_cells number of repeats for that cell type profile
+def repeatCellTypes(df:pd.DataFrame, cell_type:str, n_cells:int) -> pd.Series:
+    """For the df, which just has cell type profiles, and for one cell type. Return the cell type profile vector multiplied by n_cells
 
     If no cells are sampled. returns an empty dataframe
     Args:
-        df (pd.DataFrame): _description_
-        cell_type (str): _description_
-        n_cells (int): _description_
+        df (pd.DataFrame): df with cell type profiles
+        cell_type (str): cell type name
+        n_cells (int): how many times to multiple the cell type profile (same as sammpling the cell)
 
     Returns:
-        pd.DataFrame: _description_
+        pd.Series: Our cell type profile of our selected cell_type that has been multiplied by "n_cells".
     """
 
-    # First filter the df for that cell type. This will be a series
+    # First filter the df for that cell type. This will be a series where values are gene expression levels
     cell_type_series = df[df.index  == cell_type]
     
     # CHeck to make sure we succesfully got our cell type profile
@@ -340,25 +355,10 @@ def repeatCellTypes(df:pd.DataFrame, cell_type:str, n_cells:int) -> pd.DataFrame
     
     # If n_cells is 0, then we will have to jsut return nothing
     if n_cells == 0:
-        return pd.DataFrame()
-    
-    
-    # initiate a list to hold the cell type series X amount of times
-    lo_CellTypeSeries = []
+        return pd.Series()
 
-    # print(cell_type_series)
-    # print(n_cells)
-    # print(df.index)
-    # Add the row n_cells-1 number of times 
-
-    for _ in range(n_cells):
-        lo_CellTypeSeries.append(cell_type_series)
-        
-    #  Create a pandas dataframe of those series
-    df_CellType = pd.concat(lo_CellTypeSeries, axis = 0)
+    return cell_type_series * n_cells
     
-    return df_CellType
-          
 
 def checkEnoughCells(df:pd.DataFrame, n_cells: int) -> bool:
     """Retusn true if there is enough cells to sample without replacement
