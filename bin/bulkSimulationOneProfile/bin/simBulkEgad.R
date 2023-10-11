@@ -15,10 +15,12 @@ GO_annot_path_name <- args[[4]]
 # what the gene names are in the expression matrix g
 GO_annot_gene_column <- args[[5]]
 
-#expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/simulations/0.01/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv.gz"
+expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/please_work/simulations/0.2/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv.gz"
+expression_matrix_name <- "test0"
 #expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulations/data/simulated_bulk_dataset/brain_sc_with_metadata_cpm_pc.h5ad/simulated_ss100_var0.01_nsim10.csv"
-#GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
-#GO_annot_gene_column <- "ensembl_gene_id"
+GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
+GO_annot_path_name <- "bp"
+GO_annot_gene_column <- "ensembl_gene_id"
 
 #GO_annot_gene_column <- "DB_Object_Symbol"
 
@@ -34,12 +36,12 @@ library(stringr)
 
 print("Loading Expression Dataset")
 expression_data <- read.table(expression_matrix_path, sep = ',', header= TRUE, row.names = 1)
-expression_data
+head(expression_data)
 
-# Transpose the data frame such that columns are Genes and rows are samples
+# Transpose the data frame such that columns are Genes are columns and rows are samples
 expression_data <- t(expression_data)
+head(expression_data)
 
-dim(expression_data)
 
 
 # Convert values to numeric while preserving NAs
@@ -176,9 +178,11 @@ auroc <- neighbor_voting(genes.labels = annotations,
 rm(coexpression_network)
 rm(annotations)
 
+mean(auroc[,'auc'])
 
 ########### Write EGAD results
 # args[3] is organism part name
 # args[4] is MF or BP name
 write.table(x = auroc, paste0(expression_matrix_name,"_",GO_annot_path_name,"_EGAD.csv"), sep = ",")
 
+expression_matrix_name
