@@ -55,19 +55,20 @@ process sim_bulk_EGAD {
     '''
 }
 
-// process checkConsistantSampling {
-//     publishDir "${params.publish}/graphs/consistant_sampling", mode: "copy"
-//     conda params.python3_9
+process graphAverageComposition {
+    publishDir "${params.publish}/graphs/", mode: "copy"
+    conda params.python3_9
     
-//     input:
-//         path lo_sc_with_metadata_cpm_pc_cell_type_profiles.csv
-//     output:
-//         path <NAME>
-//     shell:
-//     '''
-//     <SCRIPT>
-//     '''
-// }
+    input:
+        path lo_sc_with_metadata_cpm_pc_cell_type_profiles.csv
+        each 
+    output:
+        path "consistancy_graph.png"
+    shell:
+    '''
+    graphAverageComposition.py !{lo_sc_with_metadata_cpm_pc_cell_type_profiles.csv}
+    '''
+}
 
 // process checkIndividualVariancePatterns {
 //     publishDir <path>, mode: 'copy'
@@ -117,6 +118,10 @@ workflow {
     // Simulate a bunch of bulk profiles at different variances
     simBulk(tuple_ch, variance_ch)
 
+    // Graphs
+    graph
+
+    // Create tuple to run EGAD with metadata
     tuple_ch2 = simBulk.out[0].combine(go_annotations_ch)
     //tuple_ch2.view()
 
