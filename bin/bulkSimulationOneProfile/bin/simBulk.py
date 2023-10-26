@@ -15,8 +15,8 @@ def main():
     CTProfile_name = sys.argv[2]
     proportions_json_path = sys.argv[3]
     variance_factor = float(sys.argv[4])
-    num_simulations = 150
-    totalSampleSize = 1000
+    num_simulations = int(sys.argv[5])
+    totalSampleSize = 500
     
     # open cell type profile database
     df = pd.read_csv(CTProfile_path,index_col=0)
@@ -127,7 +127,7 @@ def removeNegatives(dict_ProportionToSample):
 
 def getProportionCellsToSample(baseline_cell_proportion:float, variance_factor:float):
 
-    proportion_to_sample = np.random.normal(baseline_cell_proportion, 0.001 + (float(variance_factor) * float(baseline_cell_proportion)), size = 1)
+    proportion_to_sample = np.random.normal(baseline_cell_proportion, (float(variance_factor) * float(baseline_cell_proportion)), size = 1)
     return proportion_to_sample[0] # Return first element because we want a float not a np array
 
 def roundToSigFigs(scaled_dict_ProportionsToSample:dict, totalSampleSize:int):
