@@ -45,25 +45,63 @@ def main():
     # Writethe compositons for each of the simulated bulk dataset for diagnostic purposes
     for i, composition in enumerate(loSerNumberOfCells):
         composition.to_csv(f'{CTProfile_name}_n_sim_{i}_profiles.csv', index=True)
-        
+    
+    # Simulate bulk sample and save results
+    master_simulate_bulk_wrapper(loSerNumberOfCells=loSerNumberOfCells,
+                                 CT_profile_df=df,
+                                 CTProfile_name=CTProfile_name,
+                                 control = False)
+    
+    # Shuffle around the CT Profile information (random control)
+    control_CT_profile_df = shuffle_CT_Profile_df(df)
+    # Simulate bulk samples with the shuffled CT profiles and save results
+    master_simulate_bulk_wrapper(loSerNumberOfCells=loSerNumberOfCells,
+                                 CT_profile_df=control_CT_profile_df,
+                                 CTProfile_name=CTProfile_name,
+                                 control = True)
+    
+def shuffle_CT_Profile_df(CT_profile_df:pd.DataFrame) -> pd.DataFrame:
+    """Randomly shuffle each column in the CT profile DF such that the CT profiles will no longer be comprised of actual true CT profile expression.
+    
+    THe expression of a gene in each CT profile will ranodmly become the expression of one of our CT profiles
+    
+
+    Args:
+        CT_profile_df (pd.DataFrame): columns are genes, rows are CT profiles, values are expression
+
+    Returns:
+        pd.DataFrame: control_CT_profile_df: Expression of each gene has been shuffled between CT profiles
+    """
+    control_CT_profile_df = CT_profile_df.apply(np.random.permutation)
+    return control_CT_profile_df
+
+    
+def master_simulate_bulk_wrapper(loSerNumberOfCells:list,
+                                 CT_profile_df:pd.DataFrame,
+                                 CTProfile_name:str,
+                                 control: bool = False):
+    if control == True:
+        control_profiles = "_cntrl_"
+    else:
+        control_profiles = "_exp_"
+    
     # For simulated bulk dataset (but its currently just numbers), scale the CT profiles by the number of cells of that cell type we want to sample
-    loUncollapsedSimulatedBulkSamples = [simulateBulk(cellTypeComposition, df = df) for cellTypeComposition in loSerNumberOfCells]
+    loUncollapsedSimulatedBulkSamples = [simulateBulk(cellTypeComposition, df = CT_profile_df) for cellTypeComposition in loSerNumberOfCells]
     
     # Save the initial simulated bulks that are not collapsed
     for i, uncollapsedSimulatedBulkSample in enumerate(loUncollapsedSimulatedBulkSamples):
-        uncollapsedSimulatedBulkSample.to_csv(f'{CTProfile_name}_n_sim_{i}_profiles_uncollapsed.csv', index=True)
+        uncollapsedSimulatedBulkSample.to_csv(f'{CTProfile_name}{control_profiles}n_sim_{i}_profiles_uncollapsed.csv', index=True)
     
     # For each simulated single cell dataset, collapse into one single simulted bulk SAMPLE
     loSimulatedBulkSamples = [collapseSimulation(loCellTypeProfiles) for loCellTypeProfiles in loUncollapsedSimulatedBulkSamples]
-    
     
     # Concatenate all the simulated bulk SAMPLES into one simulated bulk DATASET
     df_simulatedBulkDataset = pd.concat(loSimulatedBulkSamples, axis = 1)
     
     # Save the bulk simulated dataset
-    df_simulatedBulkDataset.to_csv(f'{CTProfile_name}.csv.gz', compression='gzip')
+    df_simulatedBulkDataset.to_csv(f'{CTProfile_name}{control_profiles}.csv.gz', compression='gzip')
     
-
+    
     
 def checkSameCTs(dictBaselineProportion:dict, df:pd.DataFrame) -> bool:
     """Returns true if all the keys in dictBaselineProportion can be found as indexes in the df of cell type profiles

@@ -13,6 +13,20 @@ process makeCTProfiles {
     '''
 }
 
+process graphSparsity {
+    publishDir "${params.publish}/graphs", mode: "copy"
+    conda params.python3_9
+
+    input:
+        path ct_profile_csv
+    output:
+        path "${ct_profile_csv.getSimpleName()}_sparsity_graph.png"
+    script:
+        """
+        graphSparsity.py ${ct_profile_csv} ${ct_profile_csv.getSimpleName()}
+        """
+}
+
 process simBulk {
     cpus 2
     memory '32 GB'
@@ -28,8 +42,9 @@ process simBulk {
         val num_simulations_ch
         
     output:
-        tuple val(variance_ch), path("${cell_type_profiles_csv.getSimpleName()}.csv.gz"), path("${cell_type_profiles_csv.getSimpleName()}_n_sim_*_profiles.csv") // This will output a list of these files
-        tuple val(variance_ch), path("${cell_type_profiles_csv.getSimpleName()}_n_sim_*_profiles_uncollapsed.csv")
+        tuple val(variance_ch), path("${cell_type_profiles_csv.getSimpleName()}_exp_.csv.gz"), path("${cell_type_profiles_csv.getSimpleName()}_n_sim_*_profiles.csv") // This will output a list of these files
+        tuple val(variance_ch), path("${cell_type_profiles_csv.getSimpleName()}_cntrl_.csv.gz"), path("${cell_type_profiles_csv.getSimpleName()}_n_sim_*_profiles.csv")
+        tuple val(variance_ch), path("${cell_type_profiles_csv.getSimpleName()}_*_n_sim_*_profiles_uncollapsed.csv")
     shell:
     '''
     simBulk.py !{cell_type_profiles_csv} !{cell_type_profiles_csv.getSimpleName()} !{cell_type_proportions} !{variance_ch} !{num_simulations_ch}
@@ -45,7 +60,7 @@ process sim_bulk_EGAD {
     publishDir "${params.publish}/EGAD/${variance_ch}/${expression_matrix.getBaseName()}", mode: 'copy'
 
     input:
-        tuple val(variance_ch), path(expression_matrix), path(go_annotations_ch)
+        tuple val(variance_ch), path(expression_matrix), path(lo_simulation_compositions), path(go_annotations_ch)
         val go_annot_column
     output:
         path "*_EGAD.csv"
@@ -118,13 +133,18 @@ workflow {
     // First Make cell type profiles for each tissue
     makeCTProfiles(tissue_ch)
 
+    // Graph the sparsity of the CT Profiles
+    graphSparsity(makeCTProfiles.out)
+    
+    // Add metadata pertaining to the desired cell_type_proportions
     tuple_ch = makeCTProfiles.out.combine(cell_type_proportions)
 
     // Simulate a bunch of bulk profiles at different variances
     simBulk(tuple_ch, variance_ch, num_simulations_ch)
+    control_and_experimental_simBulks = simBulk.out[0].concat(simBulk.out[1])
 
     // Get a bunch of stats about the simulation
-    getSimulationStats(simBulk.out[0]) // For one level of variance, get the average of the composition across simulations
+    getSimulationStats(control_and_experimental_simBulks) // For one level of variance, get the average of the composition across simulations
     // Make one graph per organism part and variance level that shows cell sampling at each simulation
     graphSimulationComposition(getSimulationStats.out)
 
@@ -134,12 +154,10 @@ workflow {
     graphAverageComposition(grouped_tuple_ch)
 
     // Create tuple to run EGAD with metadata
-    tuple_ch2 = simBulk.out[0].combine(go_annotations_ch)
-    //tuple_ch2.view()
-
-
-    // Run EGAD on the different samples
-    //sim_bulk_EGAD(tuple_ch2, go_annot_gene_column_ch)
+    tuple_ch2 = control_and_experimental_simBulks.combine(go_annotations_ch)
+    
+    //Run EGAD on the different samples
+    sim_bulk_EGAD(tuple_ch2, go_annot_gene_column_ch)
 
 
 }
