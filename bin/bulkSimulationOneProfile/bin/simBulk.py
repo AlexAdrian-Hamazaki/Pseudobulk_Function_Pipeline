@@ -16,7 +16,7 @@ def main():
     proportions_json_path = sys.argv[3]
     variance_factor = float(sys.argv[4])
     num_simulations = int(sys.argv[5])
-    totalSampleSize = 500
+    totalSampleSize = 1000
     
     # open cell type profile database
     df = pd.read_csv(CTProfile_path,index_col=0)
@@ -38,7 +38,7 @@ def main():
 
     # Actually get the number of cells we need to sample for each simulated bulk dataset
     loDictsNumberOfCells = [getNumberToSample(dictCellTypeProportion, totalSampleSize=totalSampleSize) for dictCellTypeProportion in loDictsCellTypeProportions]
-    
+
     # Turn all the dictionaries into pandas series
     loSerNumberOfCells = [pd.Series(dictNumberOfCells) for dictNumberOfCells in loDictsNumberOfCells]
     
@@ -49,60 +49,49 @@ def main():
     # Simulate bulk sample and save results
     master_simulate_bulk_wrapper(loSerNumberOfCells=loSerNumberOfCells,
                                  CT_profile_df=df,
-                                 CTProfile_name=CTProfile_name,
-                                 control = False)
-    
-    # Shuffle around the CT Profile information (random control)
-    control_CT_profile_df = shuffle_CT_Profile_df(df)
-    # Simulate bulk samples with the shuffled CT profiles and save results
-    master_simulate_bulk_wrapper(loSerNumberOfCells=loSerNumberOfCells,
-                                 CT_profile_df=control_CT_profile_df,
-                                 CTProfile_name=CTProfile_name,
-                                 control = True)
-    
-def shuffle_CT_Profile_df(CT_profile_df:pd.DataFrame) -> pd.DataFrame:
-    """Randomly shuffle each column in the CT profile DF such that the CT profiles will no longer be comprised of actual true CT profile expression.
-    
-    THe expression of a gene in each CT profile will ranodmly become the expression of one of our CT profiles
+                                 CTProfile_name=CTProfile_name)
     
 
-    Args:
-        CT_profile_df (pd.DataFrame): columns are genes, rows are CT profiles, values are expression
-
-    Returns:
-        pd.DataFrame: control_CT_profile_df: Expression of each gene has been shuffled between CT profiles
-    """
-    control_CT_profile_df = CT_profile_df.apply(np.random.permutation)
-    return control_CT_profile_df
 
     
 def master_simulate_bulk_wrapper(loSerNumberOfCells:list,
                                  CT_profile_df:pd.DataFrame,
                                  CTProfile_name:str,
-                                 control: bool = False):
-    if control == True:
-        control_profiles = "_cntrl_"
-    else:
-        control_profiles = "_exp_"
+                                 ):
     
     # For simulated bulk dataset (but its currently just numbers), scale the CT profiles by the number of cells of that cell type we want to sample
     loUncollapsedSimulatedBulkSamples = [simulateBulk(cellTypeComposition, df = CT_profile_df) for cellTypeComposition in loSerNumberOfCells]
     
     # Save the initial simulated bulks that are not collapsed
     for i, uncollapsedSimulatedBulkSample in enumerate(loUncollapsedSimulatedBulkSamples):
-        uncollapsedSimulatedBulkSample.to_csv(f'{CTProfile_name}{control_profiles}n_sim_{i}_profiles_uncollapsed.csv', index=True)
+        uncollapsedSimulatedBulkSample.to_csv(f'{CTProfile_name}_n_sim_{i}_profiles_uncollapsed.csv', index=True)
     
     # For each simulated single cell dataset, collapse into one single simulted bulk SAMPLE
     loSimulatedBulkSamples = [collapseSimulation(loCellTypeProfiles) for loCellTypeProfiles in loUncollapsedSimulatedBulkSamples]
+
     
     # Concatenate all the simulated bulk SAMPLES into one simulated bulk DATASET
     df_simulatedBulkDataset = pd.concat(loSimulatedBulkSamples, axis = 1)
     
+    #CPM norm
+    df_simulatedBulkDataset = CPM_norm_df(df_simulatedBulkDataset)
+    
     # Save the bulk simulated dataset
-    df_simulatedBulkDataset.to_csv(f'{CTProfile_name}{control_profiles}.csv.gz', compression='gzip')
+    df_simulatedBulkDataset.to_csv(f'{CTProfile_name}_.csv.gz', compression='gzip')
     
     
+def CPM_norm_df(df):
+    # Genes are rows, samples are columns
     
+    # Step 1: Calculate library size for each sample
+    library_size = df.sum(axis = 0)
+
+    # Step 2: Calculate CPM for each gene in each sample
+    cpm_df = (df.div(library_size, axis=1)) * 1e6  # Multiply by 1 million
+    
+    return cpm_df
+
+
 def checkSameCTs(dictBaselineProportion:dict, df:pd.DataFrame) -> bool:
     """Returns true if all the keys in dictBaselineProportion can be found as indexes in the df of cell type profiles
 
@@ -148,7 +137,7 @@ def getProportionToSample(dictBaselineProportion:dict,  variance_factor:float, t
     # Identify how many cells of each cell type we want to sample, (keys are cell types)
     for ct in loCts:
         # for each cell type, get a value to sample
-        proportion_to_sample = getProportionCellsToSample(cell_proportion_info=dictBaselineProportion[ct], variance_factor=variance_factor)
+        proportion_to_sample = getProportionCellsToSample(cell_proportion_info=dictBaselineProportion[ct], variance_factor=variance_factor, totalSampleSize=totalSampleSize)
         
         # Add this number to our dictionary which contains the number of cels to sample for this simulated bulk sample
         dict_ProportionToSample[ct] = proportion_to_sample
@@ -181,7 +170,7 @@ def removeNegatives(dict_ProportionToSample):
                 
     return dict_ProportionToSample
 
-def getProportionCellsToSample(cell_proportion_info:list, variance_factor:float) -> float:
+def getProportionCellsToSample(cell_proportion_info:list, variance_factor:float, totalSampleSize:int) -> float:
     
     """
     Get an int value that represents how many cells we want to sample.
@@ -200,15 +189,26 @@ def getProportionCellsToSample(cell_proportion_info:list, variance_factor:float)
     # Get the stdev of this cell's sampling
     stdev_cell_proportion = cell_proportion_info[1]
     
-    proportion_to_sample = np.random.normal(baseline_cell_proportion, (float(variance_factor) * float(stdev_cell_proportion)), size = 1)
-    return proportion_to_sample[0] # Return first element because we want a float not a np array
+    
+    proportion_to_sample = np.random.normal(baseline_cell_proportion, float(variance_factor) * float(stdev_cell_proportion), size = 1)
+    proportion_to_sample = round(proportion_to_sample[0], len(str(totalSampleSize))) # round to the sig figs or how many cells we are sampling
+    return proportion_to_sample # Return first element because we want a float not a np array
 
 def roundToSigFigs(scaled_dict_ProportionsToSample:dict, totalSampleSize:int):
-    
     for key in list(scaled_dict_ProportionsToSample.keys()):
         scaled_dict_ProportionsToSample[key] = round(scaled_dict_ProportionsToSample[key], len(str(totalSampleSize)))
         
     return scaled_dict_ProportionsToSample
+
+def getDecimalDepth(float_num:float) -> int:
+    float_str = str(float_num)
+    
+    # Check the decimal places in a number
+    if '.' in float_str:
+        decimal_places = len(float_str.split('.')[1])
+        return int(decimal_places)
+    else:
+        return 0
 
 def scaleDictTo(dict_ProportionToSample:dict, totalSampleSize:int):
     """Scale dictionary values such that the sum of the dict is equal to totalSampleSize
@@ -225,8 +225,8 @@ def scaleDictTo(dict_ProportionToSample:dict, totalSampleSize:int):
     scaled_dict = {key: round(totalSampleSize*(value/total_sum)) for key,value in dict_ProportionToSample.items()}
         
     # If the sum of cells the dictionary is not equal to the totalSampleSize then re-scale
-    if int(sum(scaled_dict.values())) != int(totalSampleSize):
-        scaled_dict = fixRoundingProblem(scaled_dict,  totalSampleSize)
+    # if int(sum(scaled_dict.values())) != int(totalSampleSize):
+    #     scaled_dict = fixRoundingProblem(scaled_dict,  totalSampleSize)
     
     return scaled_dict
 
@@ -247,35 +247,6 @@ def getShuffledKeys(dict):
     
     
     return keys_list
-
-
-        
-def getBaselineProportion(CTProfile_name:str, proportions_json_path:json) -> dict:
-    """Get the list of proper cell type baseline proportions depending on if we are using brain or pbmc
-
-    Args:
-        CTProfile_name (str): name of the dataframe of cell type profiles
-        proportions_json (json): json that contains baseline cell type profiles for brian or pbmc
-
-    Returns:
-        dict: A dict where keys are cell types, and values are their expected baseline proportions
-    """
-    
-    # open json file
-    with open(proportions_json_path, 'r') as json_file:
-        dict_propostions_json = json.load(json_file)
-    
-    
-    # Get the correct key
-    for key in dict_propostions_json.keys():
-        if key == CTProfile_name:
-            correct_key = key
-    # If no key was found,raise error
-    if not correct_key:
-        raise ValueError("Key not found")
-    
-    # Return the proportions of cell types based on our key (which is a tissue type)
-    return dict_propostions_json[correct_key]
 
     
 def collapseSimulation(df: pd.DataFrame) -> pd.Series:
@@ -304,11 +275,9 @@ def getNumberToSample(dictCellTypeProportion:dict, totalSampleSize:int) -> dict:
     dictNumberToSample = {}
     
     for key in dictCellTypeProportion:
-        dictNumberToSample[key] = int(dictCellTypeProportion[key] * totalSampleSize)
-        
+        dictNumberToSample[key] = round(dictCellTypeProportion[key] * totalSampleSize)
     # Scale the values to be equal to the total sample size
     scaled_dictNumberToSample = scaleDictTo(dict_ProportionToSample = dictCellTypeProportion, totalSampleSize=totalSampleSize)
-
 
         
     return scaled_dictNumberToSample
@@ -501,6 +470,10 @@ def getBaselineProportion(CTProfile_name:str, proportions_json_path:json) -> dic
     # open json file
     with open(proportions_json_path, 'r') as json_file:
         dict_propostions_json = json.load(json_file)
+        
+    # Fix CT PRofile name by removing exp or control
+    CTProfile_name = "_".join(CTProfile_name.split("_")[1:])
+    print(CTProfile_name)
     
     # Initiate a correct key as False
     correct_key = False
@@ -511,7 +484,7 @@ def getBaselineProportion(CTProfile_name:str, proportions_json_path:json) -> dic
             correct_key = key
     # If no key was found,raise error
     if not correct_key:
-        raise ValueError("Key not found")
+        raise ValueError(f"{key}. {CTProfile_name} Key not found")
     
     # Return the proportions of cell types based on our key (which is a tissue type)
     return dict_propostions_json[correct_key]

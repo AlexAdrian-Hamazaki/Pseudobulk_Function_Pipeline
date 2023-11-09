@@ -10,6 +10,7 @@ expression_matrix_path <- args[[1]]
 expression_matrix_name <- args[[2]]
 GO_annot_path <- args[[3]]
 GO_annot_path_name <- args[[4]]
+variance_lvl <- args[[6]]
 
 # The column you need to select in the gene annotations based on
 # what the gene names are in the expression matrix g
@@ -179,11 +180,9 @@ auroc <- neighbor_voting(genes.labels = annotations,
 rm(coexpression_network)
 rm(annotations)
 
-mean(auroc[,'auc'])
+
 
 ########### Write EGAD results
-# args[3] is organism part name
-# args[4] is MF or BP name
-write.table(x = auroc, paste0(expression_matrix_name,"_",GO_annot_path_name,"_EGAD.csv"), sep = ",")
 
-expression_matrix_name
+write.table(x = auroc, paste0(expression_matrix_name,"_",GO_annot_path_name,"_",variance_lvl,"_EGAD.csv"), sep = ",")
+
