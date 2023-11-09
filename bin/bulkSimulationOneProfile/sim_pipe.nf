@@ -33,9 +33,9 @@ process simBulk {
 
 
 process sim_bulk_EGAD {
-    cpus 4
-    memory '32 GB'
-    maxForks 12
+    // cpus 4
+    // memory '32 GB'
+    // maxForks 12
 
     publishDir "${params.publish}/EGAD/${variance_ch}/${expression_matrix.getBaseName()}", mode: 'copy'
 
