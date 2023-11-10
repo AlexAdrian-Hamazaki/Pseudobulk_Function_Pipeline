@@ -9,18 +9,18 @@ import scanpy as sc
 
 
 def main():
-    # CTProfile_path = sys.argv[1]
-    # CTProfile_name = sys.argv[2]
-    # proportions_json_path = sys.argv[3]
-    # variance_factor = sys.argv[4]
+    CTProfile_path = sys.argv[1]
+    CTProfile_name = sys.argv[2]
+    proportions_json_path = sys.argv[3]
+    variance_factor = sys.argv[4]
     
     
     num_simulations = 100
     totalSampleSize = 1000
-    CTProfile_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/work/2a/629409c1815c9a57d23fdc33b86185/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv"
-    CTProfile_name = "brain_sc_with_metadata_cpm_pc_cell_type_profiles"
-    variance_factor = 0.1
-    proportions_json_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/work/2a/629409c1815c9a57d23fdc33b86185/cell_type_proportions.json"
+    # CTProfile_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/work/2a/629409c1815c9a57d23fdc33b86185/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv"
+    # CTProfile_name = "brain_sc_with_metadata_cpm_pc_cell_type_profiles"
+    # variance_factor = 0.1
+    # proportions_json_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/work/2a/629409c1815c9a57d23fdc33b86185/cell_type_proportions.json"
     
     # open cell type profile database
     df = pd.read_csv(CTProfile_path,index_col=0)
@@ -105,6 +105,8 @@ def simulateBulk(cellTypeComposition: pd.Series, df:pd.DataFrame) -> pd.DataFram
     
     # Merge the list of dataframes into one large dataframe. This is one simulated sample that has yet to be compacted
     df_simulatedBulk = pd.concat(loCells, axis = 0)
+    
+    df_simulatedBulk.round(4)
         
     return df_simulatedBulk
         
