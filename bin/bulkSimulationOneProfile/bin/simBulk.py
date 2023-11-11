@@ -76,6 +76,9 @@ def master_simulate_bulk_wrapper(loSerNumberOfCells:list,
     #CPM norm
     df_simulatedBulkDataset = CPM_norm_df(df_simulatedBulkDataset)
     
+    # round
+    df_simulatedBulkDataset = df_simulatedBulkDataset.round(5)
+    
     # Save the bulk simulated dataset
     df_simulatedBulkDataset.to_csv(f'{CTProfile_name}_.csv.gz', compression='gzip')
     
@@ -150,13 +153,6 @@ def getProportionToSample(dictBaselineProportion:dict,  variance_factor:float, t
         random_key = np.random.choice(list(dict_ProportionToSample.keys()))
         dict_ProportionToSample[random_key] = totalSampleSize
     
-       
-    # Scale the proportions to summarize to 1
-    #scaled_dict_ProportionsToSample = scaleDictTo1(dict_ProportionToSample)
-    
-    # round based on the number of sig figs we have in totalSampleSize
-    #scaled_dict_ProportionsToSample = roundToSigFigs(scaled_dict_ProportionsToSample=scaled_dict_ProportionsToSample, totalSampleSize=totalSampleSize)
-    
     return  dict_ProportionToSample 
 
 def removeNegatives(dict_ProportionToSample):
@@ -189,16 +185,10 @@ def getProportionCellsToSample(cell_proportion_info:list, variance_factor:float,
     # Get the stdev of this cell's sampling
     stdev_cell_proportion = cell_proportion_info[1]
     
-    
     proportion_to_sample = np.random.normal(baseline_cell_proportion, float(variance_factor) * float(stdev_cell_proportion), size = 1)
-    proportion_to_sample = round(proportion_to_sample[0], len(str(totalSampleSize))) # round to the sig figs or how many cells we are sampling
+    #proportion_to_sample = round(proportion_to_sample[0], len(str(totalSampleSize))) # round to the sig figs or how many cells we are sampling
     return proportion_to_sample # Return first element because we want a float not a np array
 
-def roundToSigFigs(scaled_dict_ProportionsToSample:dict, totalSampleSize:int):
-    for key in list(scaled_dict_ProportionsToSample.keys()):
-        scaled_dict_ProportionsToSample[key] = round(scaled_dict_ProportionsToSample[key], len(str(totalSampleSize)))
-        
-    return scaled_dict_ProportionsToSample
 
 def getDecimalDepth(float_num:float) -> int:
     float_str = str(float_num)
@@ -221,8 +211,8 @@ def scaleDictTo(dict_ProportionToSample:dict, totalSampleSize:int):
     """
     total_sum = sum(dict_ProportionToSample.values())
     
-    # Scale the dict, round as well
-    scaled_dict = {key: round(totalSampleSize*(value/total_sum)) for key,value in dict_ProportionToSample.items()}
+    # Scale the dict, round as well to the nearest whole number
+    scaled_dict = {key: np.round(totalSampleSize*(value/total_sum)) for key,value in dict_ProportionToSample.items()}
         
     # If the sum of cells the dictionary is not equal to the totalSampleSize then re-scale
     # if int(sum(scaled_dict.values())) != int(totalSampleSize):
@@ -275,45 +265,45 @@ def getNumberToSample(dictCellTypeProportion:dict, totalSampleSize:int) -> dict:
     dictNumberToSample = {}
     
     for key in dictCellTypeProportion:
-        dictNumberToSample[key] = round(dictCellTypeProportion[key] * totalSampleSize)
+        dictNumberToSample[key] = dictCellTypeProportion[key] * totalSampleSize
     # Scale the values to be equal to the total sample size
     scaled_dictNumberToSample = scaleDictTo(dict_ProportionToSample = dictCellTypeProportion, totalSampleSize=totalSampleSize)
 
         
     return scaled_dictNumberToSample
 
-def fixRoundingProblem(dictNumberToSample, totalSampleSize):
-    """The values in this dict should add upto the totalSampleSize. If they don't then fix the rounding problems by adding or subtracting cells
+# def fixRoundingProblem(dictNumberToSample, totalSampleSize):
+#     """The values in this dict should add upto the totalSampleSize. If they don't then fix the rounding problems by adding or subtracting cells
 
-    Args:
-        dictNumberToSample (_type_): _description_
-    """
-    # Calculate the remaining difference between the dictionary and the totals ample size
-    remaining_difference = totalSampleSize - sum(dictNumberToSample.values())
+#     Args:
+#         dictNumberToSample (_type_): _description_
+#     """
+#     # Calculate the remaining difference between the dictionary and the totals ample size
+#     remaining_difference = totalSampleSize - sum(dictNumberToSample.values())
     
-    # If the remaining difference is 0. Then exit the recursion by returning the final dict
-    if remaining_difference == 0:
-        return dictNumberToSample
+#     # If the remaining difference is 0. Then exit the recursion by returning the final dict
+#     if remaining_difference == 0:
+#         return dictNumberToSample
     
-    # If the remaining difference is positive, then we need to add cells randomly to the dictionary
-    elif remaining_difference > 0:
-        # randomly get a key
-        key = np.random.choice(list(dictNumberToSample.keys()))
+#     # If the remaining difference is positive, then we need to add cells randomly to the dictionary
+#     elif remaining_difference > 0:
+#         # randomly get a key
+#         key = np.random.choice(list(dictNumberToSample.keys()))
     
-        # Add one cell to the dictionary
-        dictNumberToSample[key] +=1
+#         # Add one cell to the dictionary
+#         dictNumberToSample[key] +=1
         
-        return fixRoundingProblem(dictNumberToSample, totalSampleSize)
+#         return fixRoundingProblem(dictNumberToSample, totalSampleSize)
         
-    # If the remining difference is negative, then that means we need to randomly remove a cell
-    elif remaining_difference < 0:
-        # randomly get a key
-        key = np.random.choice(list(dictNumberToSample.keys()))
+#     # If the remining difference is negative, then that means we need to randomly remove a cell
+#     elif remaining_difference < 0:
+#         # randomly get a key
+#         key = np.random.choice(list(dictNumberToSample.keys()))
     
-        # Add one cell to the dictionary
-        dictNumberToSample[key] -=1
+#         # Add one cell to the dictionary
+#         dictNumberToSample[key] -=1
         
-        return fixRoundingProblem(dictNumberToSample, totalSampleSize)
+#         return fixRoundingProblem(dictNumberToSample, totalSampleSize)
         
 
     
@@ -393,8 +383,7 @@ def simulateBulk(cellTypeComposition: pd.Series, df:pd.DataFrame) -> pd.DataFram
     # Merge the list of dataframes into one large dataframe. This is one simulated bulk sample that has yet to be compacted
     df_simulatedBulk_uncollapsed = pd.concat(loMultipliedProfiles, axis = 0)
     
-    # round all the values
-    df_simulatedBulk_uncollapsed = df_simulatedBulk_uncollapsed.round(4)
+
         
     return df_simulatedBulk_uncollapsed
         
@@ -423,7 +412,9 @@ def repeatCellTypes(df:pd.DataFrame, cell_type:str, n_cells:int) -> pd.Series:
         return pd.Series()
 
     # If all is good, jsut scale the cell type profile by n_cells
-    return cell_type_profile * n_cells
+    print(cell_type_profile)
+    print(n_cells)
+    return cell_type_profile * n_cells[0]
     
 
 def checkEnoughCells(df:pd.DataFrame, n_cells: int) -> bool:
