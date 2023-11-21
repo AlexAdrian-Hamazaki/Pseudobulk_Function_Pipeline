@@ -87,10 +87,10 @@ def master_simulate_bulk_wrapper(loSerNumberOfCells:list,
     df_simulatedBulkDataset = pd.concat(loSimulatedBulkSamples, axis = 1)
     
     #CPM norm
-    df_simulatedBulkDataset = CPM_norm_df(df_simulatedBulkDataset)
+    # df_simulatedBulkDataset = CPM_norm_df(df_simulatedBulkDataset)
     
     # round
-    df_simulatedBulkDataset = df_simulatedBulkDataset.round(5)
+    df_simulatedBulkDataset = df_simulatedBulkDataset.round(3)
     
     # Save the bulk simulated dataset
     df_simulatedBulkDataset.to_csv(f'{CTProfile_name}_.csv.gz', compression='gzip')
@@ -355,9 +355,10 @@ def simulateBulk(cellTypeComposition: pd.Series, df:pd.DataFrame) -> pd.DataFram
         # For each cell type, scale the cell type profile by n_cells
         cell_type_profile_multiplied = repeatCellTypes(df = df, cell_type=cell_type, n_cells=n_cells)
         
+        cell_type_profile_multiplied = cell_type_profile_multiplied.round(3)
+        
         # Append those cells to our list of cells but only if the df_cells is not empty. If its empty then we did not smaple any of those cell types
         if len(cell_type_profile_multiplied) != 0:
-            
             loMultipliedProfiles.append(cell_type_profile_multiplied)
     
     # Merge the list of dataframes into one large dataframe. This is one simulated bulk sample that has yet to be compacted
