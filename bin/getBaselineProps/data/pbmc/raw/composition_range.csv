@@ -1,0 +1,8 @@
+cell_type,mean,lower,upper
+monocyte,15,10,20
+macrophages,0,0,0
+dendritic,1.5,1,2
+NK_cells,12.5,5,20
+B_cells,7.5,5,10
+T_cells,77.5,70,85
+platelets,0,0,0
