@@ -1,3 +1,3 @@
-{"pbmc_sc_with_metadata_cpm_pc_cell_type_profiles.csv": {"B-cells": [0.056, 0.021], "Dendritic cells": [0.011, 0.004], "Macrophages": [0.097, 0.025], "Monocytes": [0.112, 0.042], "Nk-cells": [0.094, 0.052], "Platelets": [0.048, 0.038], "T-cells": [0.581, 0.125]},
+{"pbmc_sc_with_metadata_pc_cell_type_profiles.csv": {"B-cells": [0.056, 0.021], "Dendritic cells": [0.011, 0.004], "Macrophages": [0.097, 0.025], "Monocytes": [0.112, 0.042], "Nk-cells": [0.094, 0.052], "Platelets": [0.048, 0.038], "T-cells": [0.581, 0.125]},
 
-"brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv": {"Astrocytes": [0.154, 0.033], "Excitatory neurons": [0.324, 0.047], "Inhibitory neurons": [0.139, 0.047], "Microglial cells": [0.09, 0.028], "Oligodendrocytes": [0.123, 0.035]}}
+"brain_sc_with_metadata_pc_cell_type_profiles.csv": {"Astrocytes": [0.154, 0.033], "Excitatory neurons": [0.324, 0.047], "Inhibitory neurons": [0.139, 0.047], "Microglial cells": [0.09, 0.028], "Oligodendrocytes": [0.123, 0.035]}}

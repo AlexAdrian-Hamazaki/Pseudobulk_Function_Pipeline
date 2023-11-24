@@ -29,10 +29,9 @@ process graphSparsity {
 }
 
 process simBulk {
-    cpus 2
-    memory '32 GB'
+    memory '8 GB'
     executor "local"
-    maxForks 1
+    maxForks 32
 
     publishDir "${params.publish}/simulations/${variance_ch}/${cell_type_profiles_csv}", mode: "copy"
     conda params.python3_9
@@ -53,9 +52,9 @@ process simBulk {
 
 
 process sim_bulk_EGAD {
-    // cpus 4
-    // memory '32 GB'
-    // maxForks 12
+    memory '32 GB'
+    executor "local"
+    maxForks 8
 
     publishDir "${params.publish}/EGAD/${expression_matrix.getBaseName()}", mode: 'copy'
 
@@ -170,6 +169,27 @@ process graphEGAD_CTrelateness {
 }
 
 
+process graphEGAD_BulkPerformers {
+    // Graph the EGAD average AUC over variance levels and stratifying the AUCs by their GO CT Relatedness
+
+    publishDir "${params.publish}/graphs/EGAD/Bulk"
+    conda params.python3_9
+
+    input:
+        tuple val(organism_part), path(melted_egad), path(bulk_egad)
+    output:
+        path "*_EGAD_avg_AUC_boxplot_CTAffiliation.png" // Graphs with avg for Control vs Experimental across variance levels
+        path "*_EGAD_avg_AUC_lineplot_CTAffiliation.png" // Graphs with avg for Control vs Experimental across variance levels
+        path "*_EGAD_recovery_graph.png"
+    
+    script:
+    """
+    graphEGAD_splitCTAffiliation.py ${melted_df_csv} ${ctaffiliation_csv}
+    """
+}
+
+
+
 tissue_ch = Channel.fromPath(params.tissue_dir)
 cell_type_proportions = Channel.fromPath(params.cell_type_proportions)
 variance_ch = Channel.value(params.compositional_variance)
@@ -183,6 +203,10 @@ ctaffiliation_csv_ch = Channel.fromPath(params.ctaffiliation_csv)
 // Num sims is how many simulations we want to run
 num_simulations_ch = Channel.value(params.num_sims)
 
+//PAth to the Bulk performance GO Terms for BP
+bulk_egad_ch = Channel.fromPath(params.bulk_performance)
+bulk_egad_ch = bulk_egad_ch.map{[it.toString().split("/")[-1].split("_")[0], it]}
+
 workflow {
     // First Make cell type profiles for each tissue
     makeCTProfiles(tissue_ch)
@@ -193,7 +217,6 @@ workflow {
     
     // Add metadata pertaining to the desired cell_type_proportions
     tuple_ch = CT_profiles_ch.combine(cell_type_proportions)
-    tuple_ch.view()
     // Simulate a bunch of bulk profiles at different variances
     simBulk(tuple_ch, variance_ch, num_simulations_ch)
     // Get a bunch of stats about the simulation
@@ -205,7 +228,6 @@ workflow {
     // Make one graph per organism part that shows the average composition for each variance level
     graphAverageComposition(grouped_tuple_ch)
     // Graph the Correlations of each bulk dataset
-    // TODO
     // Create tuple to run EGAD with metadata
     tuple_ch2 = simBulk.out[0].combine(go_annotations_ch)
     
@@ -214,7 +236,6 @@ workflow {
 
     // Make 1 channel for EGAD graphing that passes all of the EGAD results into 1 channel
     egad_melt_ch = sim_bulk_EGAD.out.collect()
-    //egad_graph_ch.view()
     
     // Make melted dataframe for graphing for each organism part
     makeMeltedDF(egad_melt_ch)
@@ -225,4 +246,21 @@ workflow {
     // Graph the AVG AUC of each organism part across the variance levels, stratify by experiment and control AND by if the GO term is CT Related or not
     graphEGAD_CTrelateness(makeMeltedDF.out, ctaffiliation_csv_ch)
 
+    // Graph the avg AUC for the GTEX BULK AUC GO term performers
+    
+    // // For every element of this channel, convert it to a string, split in pieces separated by --, get the second part, then split by _3p and get the first part. Return a list with this as the first value, and then the original element as the second value. This part has to be customized depending on what part of the String you want to get as matching key    
+    // makeMeltedDF.out.flatten().branch{brain: it.toString().split("/")[-1].split("_")[0] == 'brain'
+    //                         blood: it.toString().split("/")[-1].split("_")[0] == 'pbmc'
+    //                         other: true
+    //                         }.set{melted_ch}
+    // melted_ch.blood.map{['Blood', it]}.set{blood_ch}
+    // melted_ch.brain.map{['Brain', it]}.set{brain_ch}
+    // ch_collected_melts = brain_ch.concat(blood_ch)
+
+    // ch_bulk_sc_egads = ch_collected_melts.join(bulk_egad_ch, by:0).view()
+    
+
+    // Combine according to a key that is the first value of every first element, which is a list according to what we did above
+    // For every element of this channel, which consists of three values now, the matching key (id), the first element of the first channel, and the second, keep only the second and the third.
+// https://nextflow-io.github.io/patterns/create-key-to-combine-channels/
 }
