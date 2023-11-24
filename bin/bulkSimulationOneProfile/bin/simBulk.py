@@ -14,17 +14,6 @@ def main():
     CTProfile_path = sys.argv[1]
     CTProfile_name = sys.argv[2]
     proportions_json_path = sys.argv[3]
-<<<<<<< HEAD
-    variance_factor = sys.argv[4]
-    
-    
-    num_simulations = 100
-    totalSampleSize = 1000
-    # CTProfile_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/work/2a/629409c1815c9a57d23fdc33b86185/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv"
-    # CTProfile_name = "brain_sc_with_metadata_cpm_pc_cell_type_profiles"
-    # variance_factor = 0.1
-    # proportions_json_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/work/2a/629409c1815c9a57d23fdc33b86185/cell_type_proportions.json"
-=======
     variance_factor = float(sys.argv[4])
     num_simulations = int(sys.argv[5])
     totalSampleSize = 500
@@ -40,7 +29,6 @@ def main():
     # variance_factor = 0.1
     # proportions_json_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/getBaselineProps/cell_type_proportions2.json"
     # num_simulations=50
->>>>>>> sqrtvariance
     
     # open cell type profile database
     df = pd.read_csv(CTProfile_path,index_col=0)
@@ -60,19 +48,6 @@ def main():
                                                                totalSampleSize,
                                                                variance_factor)
 
-<<<<<<< HEAD
-        loloCellTypeCompositions.append(cellTypeComposition)
-        
-    # For each of the cell type compositions, get a simulated single cell dataset.
-    loloCellTypeProfiles = [simulateBulk(cellTypeComposition, df = df) for cellTypeComposition in loloCellTypeCompositions]
-    print(len(loloCellTypeProfiles))
-    
-        #~~~ UP TO HERE IS CHECKED AND MAKES SENSE
-
-    # For each simulated single cell dataset, collapse into one single simulted bulk sample
-    loSimulatedBulkSamples = [collapseSimulation(loCellTypeProfiles) for loCellTypeProfiles in loloCellTypeProfiles]
-    print(len(loSimulatedBulkSamples))
-=======
 
     # Actually get the number of cells we need to sample for each simulated bulk dataset.#I THINK I FIXED IT HERE
     loDictsNumberOfCells = [getNumberToSample(dictCellTypeProportion, totalSampleSize=totalSampleSize) for dictCellTypeProportion in loDictsCellTypeProportions]
@@ -100,7 +75,6 @@ def master_simulate_bulk_wrapper(loSerNumberOfCells:list,
     
     # For simulated bulk dataset (but its currently just numbers), scale the CT profiles by the number of cells of that cell type we want to sample
     loUncollapsedSimulatedBulkSamples = [simulateBulk(cellTypeComposition, df = CT_profile_df) for cellTypeComposition in loSerNumberOfCells]
->>>>>>> sqrtvariance
     
     # Save the initial simulated bulks that are not collapsed
     for i, uncollapsedSimulatedBulkSample in enumerate(loUncollapsedSimulatedBulkSamples):
@@ -122,12 +96,6 @@ def master_simulate_bulk_wrapper(loSerNumberOfCells:list,
     # Save the bulk simulated dataset
     df_simulatedBulkDataset.to_csv(f'{CTProfile_name}_.csv.gz', compression='gzip')
     
-<<<<<<< HEAD
-     # EVERYTHING IS CHECKED, THE ONLY DIFFERENCE SEEMS TO BE THE VARIANCE LEVEL
-    # Also write the compositons for each of the simulated bulk dataset
-    for i, composition in enumerate(loloCellTypeCompositions):
-        composition.to_csv(f'{CTProfile_name}_n_sim_{i}_profiles.csv', index=True)
-=======
     
 def CPM_norm_df(df):
     # Genes are rows, samples are columns
@@ -286,7 +254,6 @@ def getShuffledKeys(dict):
     
     return keys_list
 
->>>>>>> sqrtvariance
     
 def collapseSimulation(df: pd.DataFrame) -> pd.Series:
     """Each dataframe is a bunch of cell type profiles.
@@ -395,19 +362,10 @@ def simulateBulk(cellTypeComposition: pd.Series, df:pd.DataFrame) -> pd.DataFram
         if len(cell_type_profile_multiplied) != 0:
             loMultipliedProfiles.append(cell_type_profile_multiplied)
     
-<<<<<<< HEAD
-    # Merge the list of dataframes into one large dataframe. This is one simulated sample that has yet to be compacted
-    df_simulatedBulk = pd.concat(loCells, axis = 0)
-    
-    df_simulatedBulk.round(4)
-        
-    return df_simulatedBulk
-=======
     # Merge the list of dataframes into one large dataframe. This is one simulated bulk sample that has yet to be compacted
     df_simulatedBulk_uncollapsed = pd.concat(loMultipliedProfiles, axis = 0)
 
     return df_simulatedBulk_uncollapsed
->>>>>>> sqrtvariance
         
 def repeatCellTypes(df:pd.DataFrame, cell_type:str, n_cells:int) -> pd.Series:
     """For the df, which just has cell type profiles, and for one cell type. Return the cell type profile vector multiplied by n_cells
