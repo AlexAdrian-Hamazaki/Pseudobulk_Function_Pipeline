@@ -16,7 +16,7 @@ def main():
     proportions_json_path = sys.argv[3]
     variance_factor = float(sys.argv[4])
     num_simulations = int(sys.argv[5])
-    totalSampleSize = 1000
+    totalSampleSize = 500
     
     # 90/be06d3
     # CTProfile_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/work/90/be06d3fa5054807c8b735d168940c5/exp_brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv"
@@ -451,9 +451,12 @@ def getBaselineProportion(CTProfile_name:str, proportions_json_path:json) -> dic
     for key in dict_propostions_json.keys():
         if key == f"{CTProfile_name}.csv":
             correct_key = key
-    # If no key was found,raise error
-    if not correct_key:
-        raise ValueError(f"{key}. {CTProfile_name} Key not found")
+    try:
+        # If no key was found, raise error
+        if not correct_key:
+            raise ValueError(f"{key}. {CTProfile_name} Key not found")
+    except ValueError as e:
+        print(f"Error: {e}")
     
     # Return the proportions of cell types based on our key (which is a tissue type)
     return dict_propostions_json[correct_key]
