@@ -362,6 +362,7 @@ def simulateBulk(cellTypeComposition: pd.Series, df:pd.DataFrame) -> pd.DataFram
         if len(cell_type_profile_multiplied) != 0:
             loMultipliedProfiles.append(cell_type_profile_multiplied)
     
+
     # Merge the list of dataframes into one large dataframe. This is one simulated bulk sample that has yet to be compacted
     df_simulatedBulk_uncollapsed = pd.concat(loMultipliedProfiles, axis = 0)
 

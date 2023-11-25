@@ -1,11 +1,8 @@
 
 process makeCTProfiles {
     publishDir "${params.publish}/CTProfiles", mode: 'copy'
-<<<<<<< HEAD
-    conda params.python3_9
-=======
+
     conda params.python3_9 
->>>>>>> sqrtvariance
     
     input:
         path h5ad_path
@@ -33,13 +30,6 @@ process graphSparsity {
 }
 
 process simBulk {
-<<<<<<< HEAD
-=======
-    memory '8 GB'
-    executor "local"
-    maxForks 32
-
->>>>>>> sqrtvariance
     publishDir "${params.publish}/simulations/${variance_ch}/${cell_type_profiles_csv}", mode: "copy"
     conda params.python3_9
     
