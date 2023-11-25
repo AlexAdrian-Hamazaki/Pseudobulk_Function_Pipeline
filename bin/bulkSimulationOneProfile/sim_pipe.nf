@@ -49,19 +49,11 @@ process simBulk {
 
 
 process sim_bulk_EGAD {
-<<<<<<< HEAD
-    // cpus 4
-    // memory '32 GB'
-    // maxForks 12
-
-    publishDir "${params.publish}/EGAD/${variance_ch}/${expression_matrix.getBaseName()}", mode: 'copy'
-=======
     memory '32 GB'
     executor "local"
     maxForks 8
 
     publishDir "${params.publish}/EGAD/${expression_matrix.getBaseName()}", mode: 'copy'
->>>>>>> sqrtvariance
 
     input:
         tuple val(variance_ch), path(expression_matrix), path(lo_simulation_compositions), path(go_annotations_ch)
