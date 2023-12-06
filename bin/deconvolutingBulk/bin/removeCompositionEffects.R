@@ -1,0 +1,68 @@
+devtools::install_github('oganm/markerGeneProfile')
+if (!require(ggplot2)) install.packages('ggplot2')
+if (!require(gplots)) install.packages('gplots')
+if (!require(viridis)) install.packages('viridis')
+if (!require(dplyr)) install.packages('dplyr')
+if (!require(knitr)) install.packages('knitr')
+
+library(markerGeneProfile)
+library(tidyverse)
+
+
+data(mouseMarkerGenes)
+names(mouseMarkerGenes)
+
+# load brain bulk dataset
+brain_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkEGADPipeline/data/splitOPs1/splits/Brain_split.csv.gz"
+brain_df = read.csv(brain_path, row.names = 1, header = TRUE)
+brain_df = as.data.frame(t(brain_df))
+# make the index be integrers and the Gene.Symbol name be where all the gene information is
+brain_df = rownames_to_column(brain_df, var = 'Gene.Symbol')
+
+# load marker genes 
+marker_brain_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/deconvolutingBulk/data/brain_marker_genes_hgnc.csv"
+brain_markers = read.csv(marker_brain_path, header = TRUE, row.names = 1)
+brain_markers_short = head(brain_markers, 10)
+brain_markers_short
+# Coerce the brain_markers into a list of character vectors, where each character vector is the gene symbols of the marker genes for a cell type
+lo_lo_CT_markers = lapply(brain_markers, as_vector)
+typeof(lo_lo_CT_markers)
+
+
+
+estimations =  mgpEstimate(exprData=brain_df,
+                           genes=lo_lo_CT_markers,
+                           geneColName='Gene.Symbol',
+                           geneTransform = NULL) # removes genes if they are the minority in terms of rotation sign from estimation process
+
+
+estimations$main <- estimations$estimates %>% sapply(function(vals) { vals }) 
+head(estimations$main)
+lo_genes = brain_df[,1]
+rownames(brain_df) = brain_df$Gene.Symbol
+brain_df = brain_df %>% select(-Gene.Symbol)
+fit_model_for_one_gene = function(currGene, brain_df, estimations) {
+
+    # First, get the bulk expression for the gene I'm currently fitting a model for
+    expr_gene_in_bulk  = as.data.frame(t(brain_df[currGene,]))
+    colnames(expr_gene_in_bulk) = c("currGene")
+    #Make a dataframe of all of the covariates (1rst PC of each cell type marker gene)
+    covariates <- estimations$main[row.names(expr_gene_in_bulk), ] %>% as.data.frame() # ensure samples match exprmat
+
+    merged_df = merge(covariates, expr_gene_in_bulk, by = 'row.names') %>% 
+        column_to_rownames(var = "Row.names")
+
+    #make a dataframe with the coviariates and the bulk expression of a gene
+    # Make model that tries to fit bulk from the coviariates
+    model = lm(currGene ~ ., merged_df)
+
+    return(model)
+
+}
+
+lo_linear_models = lapply(lo_genes, fit_model_for_one_gene, brain_df, estimations)
+
+
+exprmatRes <- lo_linear_models  %>% sapply(function(currLm) { currLm$residuals } ) %>% t() # extract residuals
+
+write.csv(exprmatRes, file = 'brain_residuals.csv')

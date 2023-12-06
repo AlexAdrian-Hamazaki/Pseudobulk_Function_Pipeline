@@ -10,25 +10,19 @@ expression_matrix_path <- args[[1]]
 expression_matrix_name <- args[[2]]
 GO_annot_path <- args[[3]]
 GO_annot_path_name <- args[[4]]
-<<<<<<< HEAD
-=======
 variance_lvl <- args[[6]]
 
 # The column you need to select in the gene annotations based on
 # what the gene names are in the expression matrix g
->>>>>>> sqrtvariance
 GO_annot_gene_column <- args[[5]]
 
-# expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/test_main/simulations/0.5/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv/brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv.gz"
-# expression_matrix_name <- "TEST_MAIN_0.5"
+# expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/deconvolutingBulk/data/residuals/brain_residuals.csv"
+# expression_matrix_name <- "brain_residuals"
 # GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
 # GO_annot_path_name <- "BP"
 # GO_annot_gene_column <- "ensembl_gene_id"
-<<<<<<< HEAD
-=======
-# variance_level <-0.5
 
->>>>>>> sqrtvariance
+
 
 #GO_annot_gene_column <- "DB_Object_Symbol"
 

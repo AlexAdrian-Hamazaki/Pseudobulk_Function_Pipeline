@@ -11,18 +11,20 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    melted_df_path = sys.argv[1]
+    lo_melted_df_path = sys.argv[1:]
 
-    # load melted df
-    melted_df = pd.read_csv(melted_df_path, index_col=None)
-    
-    # Get the organism part we are using
-    op = melted_df_path.split("_")[0]
-    # Make boxplot of melted df
-    graph_AUCs_boxplot(melted_df, op)
-    
-    # Make avg lineplot of melted df
-    graph_AUCs_lineplot(melted_df=melted_df, op = op)
+    for melted_df_path in lo_melted_df_path:
+        # Get the organism part we are using
+        op = melted_df_path.split("_")[0]    
+        
+        # load melted df
+        melted_df = pd.read_csv(melted_df_path, index_col=0)
+                
+        # Make boxplot of melted df
+        graph_AUCs_boxplot(melted_df, op)
+        
+        # Make avg lineplot of melted df
+        graph_AUCs_lineplot(melted_df=melted_df, op = op)
     
 def graph_AUCs_boxplot(melted_df, op):
     """Graphs AUCS. 
@@ -46,8 +48,12 @@ def graph_AUCs_boxplot(melted_df, op):
     
 
 def graph_AUCs_lineplot(melted_df, op):
+    plt.figure().clear()
+
+    print(melted_df.head())
     # get the average auc performance for each variance level between exp and contrl
     melted_mean_df = melted_df.groupby(['variable', 'type']).mean().reset_index()
+    
     # Defining a color palette
     custom_palette = {'exp': 'red', 'contrl': 'blue'}
     # Setting the custom color palette
@@ -60,6 +66,8 @@ def graph_AUCs_lineplot(melted_df, op):
     # Show the plot
     print(f"{op}_EGAD_avg_AUC_lineplot.png")
     plt.savefig(f"{op}_EGAD_avg_AUC_lineplot.png")
+    plt.figure().clear()
+
     
     
 if __name__ == "__main__":

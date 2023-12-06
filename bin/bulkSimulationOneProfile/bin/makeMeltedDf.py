@@ -6,19 +6,44 @@ import sys
 
 
 def main():
-    lo_EGADs = sys.argv[1:]
-    #lo_EGADs = os.listdir("/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/dev/EGAD/brain_sc_with_metadata_cpm_pc_cell_type_profiles_cntrl_.csv") + os.listdir("/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/dev/EGAD/brain_sc_with_metadata_cpm_pc_cell_type_profiles_exp_.csv")
+    bootstrap = sys.argv[1] # this will be a string 
+    organism_part = sys.argv[2] # This will be a string
+    lo_EGAD_paths = sys.argv[3:] # this will be a lsit of EGADS of a variety of variances
+    
+    # Isolate the variance level of each dataframe
+    lo_variances = [get_variance_int(path) for path in lo_EGAD_paths]
+    
+    # First lets load all of the EGADs
+    lo_EGADs = [pd.read_csv(path) for path in lo_EGAD_paths]
+    
+    # Process the column names of all the AUCs of the lo_EGAds
+    df_EGAD = process_auc_colnames(lo_dfs=lo_EGADs, lo_variance_levels=lo_variances) # Now we have a df of all the EGADs
+    
+    # Add info about the bootstrap level and organism part to the df_EGAD
+    df_EGAD['organism_part'] = organism_part
+    df_EGAD['bootstrap'] = bootstrap 
+    
+    # Now melt the dataframe such that I have information for each go term, across variances
+    df_melted = df_EGAD.reset_index().melt(id_vars = ['organism_part', 'bootstrap'])
+    
+    df_melted.to_csv(f'{organism_part}_boot{bootstrap}_melted.csv')    
+    
+    # #lo_EGADs = os.listdir("/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/dev/EGAD/brain_sc_with_metadata_cpm_pc_cell_type_profiles_cntrl_.csv") + os.listdir("/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/dev/EGAD/brain_sc_with_metadata_cpm_pc_cell_type_profiles_exp_.csv")
+    # print(lo_EGADs)
+    # # First, split the EGADs into organism parts such that keys are OPs and values are paths and add that metadata
+    # split_EGAD_dict = split_list_into_OPs(lo_EGADs)
+    # # Then split into bootstrap and add that metadata
+    
+    # # Then split into variance level and add that metadata
+    
+    # # Then melt the dataframe.
+    
+    # # Save the dataframe
 
-    # First, split the EGADs into organism parts such that keys are OPs and values are paths
-    split_EGAD_dict = split_list_into_OPs(lo_EGADs)
-
-
-    # Process one organism part at a time. Each element will be a melted dataframe for an organism part
-    for OP_key, lo_paths in split_EGAD_dict.items():
-        melted_df = process_organism_part(OP_key, lo_paths)
-        melted_df.to_csv(f"{OP_key}_melted_df.csv", index=False)
-
-
+    # # Process one organism part at a time. Each element will be a melted dataframe for an organism part
+    # for OP_key, lo_paths in split_EGAD_dict.items():
+    #     melted_df = process_organism_part(OP_key, lo_paths)
+    #     melted_df.to_csv(f"{OP_key}_melted_df.csv", index=False)
 
 
 def process_organism_part(OP_key:str, lo_paths:list):
@@ -55,7 +80,7 @@ def get_melted_df(lo_paths, type:str):
 	melted_df['type'] = type
 	return melted_df
 
-def process_auc_colnames(lo_dfs:list, lo_variance_levels:list):
+def process_auc_colnames(lo_dfs:list, lo_variance_levels:list) -> pd.DataFrame:
 	lo_ser_pro = [] # list hold AUC vectors wwhere names are the variance level
 	for i, df in enumerate(lo_dfs):
 		var_int = lo_variance_levels[i]
@@ -63,14 +88,9 @@ def process_auc_colnames(lo_dfs:list, lo_variance_levels:list):
 		
 		df_pro = df.rename(columns={'auc': str(var_int)})
 		auc_ser = df_pro.loc[:,str(var_int)]
-
 		lo_ser_pro.append(auc_ser)
-
-	# if len(lo_ser_pro) < 2:
-	# 	print(lo_dfs)
-	# 	assert False
-	
-	return lo_ser_pro
+    concat_df = pd.concat(lo_ser_pro, axis = 1)
+    return concat_df    
 
 def get_variance_int(path:str) -> str:
     return str(path.split('_')[-2])
