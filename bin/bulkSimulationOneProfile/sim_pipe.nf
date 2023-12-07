@@ -52,7 +52,7 @@ process simBulk {
 
 
 process sim_bulk_EGAD {
-    memory '16 GB'
+    memory '8 GB'
     executor "local"
     maxForks 64
 
@@ -118,18 +118,35 @@ process graphAverageComposition {
 process makeMeltedDF {
     // For each organism part, make a melted DF containing all the EGAD results for graphing
 
-    publishDir "${params.publish}/${ch_bootstraps}/EGAD/"
+    publishDir "${params.publish}/${ch_bootstraps}/EGAD/melted_dfs/", mode: "copy"
     conda params.python3_9
 
     input:
         tuple val(ch_bootstraps), val(sample_type), path(lo_EGAD_expression_matrixes)
     output:
-        tuple val(ch_bootstraps), path("*_melted_df.csv") // Melted DF for graphing purpose
+        path("${sample_type}_${ch_bootstraps}_melted_df.csv.gz") // Melted DF for graphing purpose
     script:
     """
-    makeMeltedDf.py ${lo_EGAD_expression_matrixes}
+    makeMeltedDf.py ${ch_bootstraps} ${sample_type} ${lo_EGAD_expression_matrixes}
     """
 }
+
+process makeALLMeltedDF {
+    // Make one melted dataframe consisting of all of the EGADs from all bootstraps from all variance levels from all organism parts
+
+    publishDir "${params.publish}/", mode: "move"
+    conda params.python3_9
+
+    input:
+        path lo_melted_datframes
+    output:
+        path("master_melted_df.csv.gz") // Melted DF for graphing purpose
+    script:
+    """
+    makeMasterMeltedDf.py ${lo_melted_datframes}
+    """
+}
+
 
 process graphEGADavg {
     // Graph the EGAD average AUC over variance levels
@@ -252,12 +269,14 @@ workflow pipe {
 
 
         // Make 1 channel for EGAD graphing that passes all of the EGAD results into 1 channel
-        egad_melt_ch =  sim_bulk_EGAD.out.groupTuple(by:[0]) // THIS IS THE ONLY THING I NEED TO GROUP BY BECAUSE I JUST WANT TO GROUP BY BOOTSTRAP
+        egad_melt_ch =  sim_bulk_EGAD.out.groupTuple(by:[0,1]) // THIS IS THE ONLY THING I NEED TO GROUP BY BECAUSE I JUST WANT TO GROUP BY BOOTSTRAP
         // THEN I"LL MAKE A MELTED DATAFRAME FOR EACH BOOTSTRAP
         // TODO MAKE A MELTED DATAFRAME FOR EACH BOOTSTRAP
         // Make melted dataframe for graphing for each organism part
         // egad_melt_ch.view()
         makeMeltedDF(egad_melt_ch)
+
+        makeALLMeltedDF(makeMeltedDF.out.collect())
 
         // TODO. THIS IS THE END OF THE PIPELINE. NOW PROCESS THE MELTED IN ANOTHER PIPELINE
         // BAISCALLY I JUST NEED TO FIX THE MELTING. I WILL MELT ONE DATAFRAME THAT CONTAINS ALL OF THE SIMULATION INFO
@@ -268,19 +287,19 @@ workflow pipe {
         // makeMeltedDF.out.view()
 
         // Graph the AVG AUC of each organism part across the variance levels, stratify by experiemnt and control
-        graphEGADavg(makeMeltedDF.out)
+        // graphEGADavg(makeMeltedDF.out)
 
         // Graph the AVG AC of each organism part across the variance levels, stratify by experiment and control AND by if the GO term is CT Related or not
         // graphEGAD_CTrelateness(makeMeltedDF.out, ctaffiliation_csv_ch)
 
         // Graph the avg AUC for the GTEX BULK AUC GO term performers
         
-        makeMeltedDF.out.combine(bulk_egad_ch)
+        // makeMeltedDF.out.combine(bulk_egad_ch)
 
 
         // melted_ch.view()
         // ch_collected_melts = brain_ch.concat(blood_ch)
-        bulk_egad_ch.view()
+        // bulk_egad_ch.view()
         // ch_bulk_sc_egads = ch_collected_melts.join(bulk_egad_ch, by:0).view()
         
 

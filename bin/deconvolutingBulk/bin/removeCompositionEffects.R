@@ -1,33 +1,30 @@
-devtools::install_github('oganm/markerGeneProfile')
+if (!require(markerGeneProfile)) devtools::install_github('oganm/markerGeneProfile')
 if (!require(ggplot2)) install.packages('ggplot2')
 if (!require(gplots)) install.packages('gplots')
 if (!require(viridis)) install.packages('viridis')
 if (!require(dplyr)) install.packages('dplyr')
 if (!require(knitr)) install.packages('knitr')
 
-library(markerGeneProfile)
+library(dplyr)
 library(tidyverse)
-
-
-data(mouseMarkerGenes)
-names(mouseMarkerGenes)
+library(ggplot2)
+library(reshape2)
 
 # load brain bulk dataset
 brain_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkEGADPipeline/data/splitOPs1/splits/Brain_split.csv.gz"
 brain_df = read.csv(brain_path, row.names = 1, header = TRUE)
 brain_df = as.data.frame(t(brain_df))
 # make the index be integrers and the Gene.Symbol name be where all the gene information is
-brain_df = rownames_to_column(brain_df, var = 'Gene.Symbol')
+brain_df = rownames_to_column(brain_df, var = 'Gene.Symbol') # this should be a dataframe where the first column is Gene Symbol and the other columns are samples
+
 
 # load marker genes 
-marker_brain_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/deconvolutingBulk/data/brain_marker_genes_hgnc.csv"
+marker_brain_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/deconvolutingBulk/data/markers/brain_marker_genes_hgnc.csv"
 brain_markers = read.csv(marker_brain_path, header = TRUE, row.names = 1)
 brain_markers_short = head(brain_markers, 10)
 brain_markers_short
 # Coerce the brain_markers into a list of character vectors, where each character vector is the gene symbols of the marker genes for a cell type
 lo_lo_CT_markers = lapply(brain_markers, as_vector)
-typeof(lo_lo_CT_markers)
-
 
 
 estimations =  mgpEstimate(exprData=brain_df,
@@ -37,7 +34,36 @@ estimations =  mgpEstimate(exprData=brain_df,
 
 
 estimations$main <- estimations$estimates %>% sapply(function(vals) { vals }) 
-head(estimations$main)
+
+for (ct in colnames(estimations$main)) {
+    # Get the data for this cell type
+    mgp = estimations$main[,ct]
+    mgp_df = data.frame(mgp)
+    # brain_markers
+    ct_markers = brain_markers_short[,ct]
+
+    ct_markers_expression = brain_df %>%
+        filter(Gene.Symbol %in% ct_markers ) %>%
+        column_to_rownames("Gene.Symbol")
+
+    ct_markers_expression = as.data.frame(t(ct_markers_expression))  %>%
+        rownames_to_column('gtex_id') %>%
+        melt(id.vars = 'gtex_id')
+
+
+    # print(head(ct_markers_expression))
+    # print(head(data.frame(mgp)))
+    merged_melted = merge(ct_markers_expression, mgp_df,  by.x = "gtex_id", by.y = "row.names")
+    # print(head())
+
+    faceted_plot = ggplot(merged_melted, aes(x = mgp , y = value)) + 
+        geom_point() +
+        facet_wrap(~variable, scales = "free_y") +
+        labs(title = paste(ct, "mgp and marker gene correlations"))
+    ggsave(paste0(ct, "_mgp_correlation.png"), plot = faceted_plot, units = "in")
+}
+
+########################
 lo_genes = brain_df[,1]
 rownames(brain_df) = brain_df$Gene.Symbol
 brain_df = brain_df %>% select(-Gene.Symbol)
@@ -60,9 +86,11 @@ fit_model_for_one_gene = function(currGene, brain_df, estimations) {
 
 }
 
+
 lo_linear_models = lapply(lo_genes, fit_model_for_one_gene, brain_df, estimations)
 
-
 exprmatRes <- lo_linear_models  %>% sapply(function(currLm) { currLm$residuals } ) %>% t() # extract residuals
+
+row.names(exprmatRes) = lo_genes
 
 write.csv(exprmatRes, file = 'brain_residuals.csv')

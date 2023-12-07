@@ -110,20 +110,28 @@ keep20PlusGOAnnotations <- function(GO_annotations, expression_data, GO_annot_ge
                                         expression_data = expression_data,
                                         GO_annot_gene_column = GO_annot_gene_column
   )
-
-  # Now make a new df counting the number of genes in each go id
-  grouped_df <- GO_annotations %>%
+  # Remove rows where the GO_annot_gene_column is not unique
+  GO_annotations_grouped = GO_annotations %>%
     group_by(GO.ID) %>%
-    summarise(count = n())
+    distinct(DB_Object_Symbol, .keep_all = TRUE) ## TODO Use GO annot gene column?
 
-  # Filter the grouped annotations for GO ids with less than 20 genes
-  plus20GoTerms <- grouped_df %>%
-    filter(count >= 20)
+  # Get the size of each GO
+  group_sizes <- GO_annotations_grouped  %>%
+    summarise(n = n())
+  print(group_sizes)
 
-  # Filter annotations for only the GO ids with >= 20 genes
-  GO_annotations20 <- filter(GO_annotations, GO.ID %in% plus20GoTerms$GO.ID)
+  # Select only GO Terms with more or equal to 20 genes 
+  large_GO_Terms <- group_sizes %>%
+    filter(n >= 20)
+  print(large_GO_Terms)
 
-  return (GO_annotations20)
+  # Filter the measured GO annotations for only those with 20 or more genes
+  GO_annotations_large = GO_annotations %>%
+  filter(GO.ID %in% large_GO_Terms$GO.ID)
+
+  stopifnot(length(unique(GO_annotations_large$GO.ID)) == nrow(large_GO_Terms))
+
+  return (GO_annotations_large)
 }
 
 # Remove GO annotations that don't have at least 20 Genes in our expression_data matrix.
