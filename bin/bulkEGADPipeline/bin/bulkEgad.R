@@ -10,20 +10,17 @@ expression_matrix_path <- args[[1]]
 expression_matrix_name <- args[[2]]
 GO_annot_path <- args[[3]]
 GO_annot_path_name <- args[[4]]
-variance_lvl <- args[[6]]
 
 # The column you need to select in the gene annotations based on
 # what the gene names are in the expression matrix g
 GO_annot_gene_column <- args[[5]]
+bootstrap <- args[[6]]
 
-expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/boot_run2/4/simulations/0.05/exp_brain_sc_with_metadata_pc_cell_type_profiles.csv/exp_brain_sc_with_metadata_pc_cell_type_profiles_.csv.gz"
-expression_matrix_name <- "brain"
-GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
-GO_annot_path_name <- "BP"
-GO_annot_gene_column <- "ensembl_gene_id"
-
-
-
+# expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkEGADPipeline/data/splitOPs1/splits/subsamples/Blood_split.csv_1.csv.gz"
+#expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulations/data/simulated_bulk_dataset/brain_sc_with_metadata_cpm_pc.h5ad/simulated_ss100_var0.01_nsim10.csv"
+#GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
+#GO_annot_gene_column <- "ensembl_gene_id"
+#GO_annot_gene_column <- "hgnc_symbol"
 #GO_annot_gene_column <- "DB_Object_Symbol"
 
 ################ 1.1 : Load Packages
@@ -31,25 +28,22 @@ library(EGAD)
 library(tidyverse)
 library(stringr)
 
-print(paste("Performing EGAD on", expression_matrix_path))
 
 ################ 2.1 : MAKING DATA SETS
 
 ########### MAKE COEXPRESSION NETWORK
 
 print("Loading Expression Dataset")
-expression_data <- read.table(expression_matrix_path, sep = ',', header= TRUE, row.names = 1)
-head(expression_data)
+expression_data <- read.table(expression_matrix_path, sep = ',', header= TRUE)
 
-# Transpose the data frame such that columns are Genes are columns and rows are samples
-expression_data <- t(expression_data)
-head(expression_data)
+# Transpose the data frame such that columns are Genes and rows are samples
+#expression_data <- t(expression_data)
 
-
+expression_data <- expression_data %>%
+  select(-c('SAMPID'))
 
 # Convert values to numeric while preserving NAs
 #expression_data <-  apply(expression_data, 2, function(col) as.numeric(as.character(col)))
-
 
 ######### Build Coexpression Network
 
@@ -138,23 +132,15 @@ keep20PlusGOAnnotations <- function(GO_annotations, expression_data, GO_annot_ge
   return (df_no_duplicates)
 }
 
-
-
 # Remove GO annotations that don't have at least 20 Genes in our expression_data matrix.
 # Note the expression_data matrix should only have PC genes at this point
 GO_annotations20 <- keep20PlusGOAnnotations(GO_annotations = GO_annotations,
                                           expression_data = expression_data,
                                           GO_annot_gene_column = GO_annot_gene_column)
-
-
-                                          
-head(GO_annotations20)
-write.csv(GO_annotations20, "GO_annotations_counts.csv")
-print(getwd())
 ### Write summary statistics to file ###
 nrow(GO_annotations)
 nrow(GO_annotations) - nrow(GO_annotations20) # The number of GO annotations we removed
-nrow(GO_annotations20)
+
 # The average amount of Genes in a GO term
 
 getMeanCount <- function(GO_annotations) {
@@ -178,8 +164,8 @@ colnames(coexpression_network)
 
 colnames(GO_annotations20)
 annotations <- make_annotations(GO_annotations20[,c(GO_annot_gene_column, 'GO.ID')], unique(GO_annotations20[,GO_annot_gene_column]), unique(GO_annotations20$GO.ID))
-GO_annotations20[,c(GO_annot_gene_column, 'GO.ID')]
-annotations[, 1:100]
+
+annotations[1:10, 1:10]
 head(coexpression_network)
 sum(annotations)
 
@@ -202,8 +188,8 @@ rm(coexpression_network)
 rm(annotations)
 
 
-
 ########### Write EGAD results
-
-write.table(x = auroc, paste0(expression_matrix_name,"_",GO_annot_path_name,"_",variance_lvl,"_EGAD.csv"), sep = ",")
+# args[3] is organism part name
+# args[4] is MF or BP name
+write.table(x = auroc, paste0(expression_matrix_name,"_",GO_annot_path_name,"_",bootstrap,"_EGAD.csv"), sep = ",")
 

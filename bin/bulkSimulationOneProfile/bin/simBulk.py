@@ -16,7 +16,7 @@ def main():
     proportions_json_path = sys.argv[3]
     variance_factor = float(sys.argv[4])
     num_simulations = int(sys.argv[5])
-    totalSampleSize = 1000
+    totalSampleSize = 2000
     
     # 90/be06d3
     # CTProfile_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/work/90/be06d3fa5054807c8b735d168940c5/exp_brain_sc_with_metadata_cpm_pc_cell_type_profiles.csv"
