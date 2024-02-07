@@ -19,7 +19,7 @@ def main():
     
     # save merged
     print(f"{go_annot_name}_withGeneData.csv")
-    merged.to_csv(f"{go_annot_name}_withGeneData.csv", index = False)
+    merged.to_csv(f"{go_annot_name}_withGeneData.csv.gz", index = False, compression='gzip')
     
 if __name__== "__main__":
     main()

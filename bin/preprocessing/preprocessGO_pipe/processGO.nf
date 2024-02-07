@@ -10,7 +10,7 @@ process processGaf { // Turn gaf file into csv
     input:
         path gaf_file
     output: 
-        path "*.csv"
+        path "*.csv.gz"
     shell:
         '''
         processGO.py !{gaf_file}
@@ -29,7 +29,7 @@ process addENSG { // add protein data
         path pc_map
 
     output:
-        path "*_withGeneData.csv"
+        path "*_withGeneData.csv.gz"
     shell:
     '''
     addENSG.py !{go_annot} !{go_annot.getSimpleName()} !{pc_map}

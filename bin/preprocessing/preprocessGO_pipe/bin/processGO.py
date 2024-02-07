@@ -53,8 +53,8 @@ def main():
     
     MF = GO[GO.loc[:, 'Aspect'] == "F"]
     
-    BP.to_csv('bp_annotations.csv', index= False)
-    MF.to_csv('mf_annotations.csv', index= False)
+    BP.to_csv('bp_annotations.csv.gz', index= False, compression='gzip')
+    MF.to_csv('mf_annotations.csv.gz', index= False, compression='gzip')
 
     
 
