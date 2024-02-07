@@ -19,6 +19,8 @@ GO_annot_gene_column <- args[[5]]
 expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulationOneProfile/data/boot_run2/4/simulations/0.05/exp_brain_sc_with_metadata_pc_cell_type_profiles.csv/exp_brain_sc_with_metadata_pc_cell_type_profiles_.csv.gz"
 expression_matrix_name <- "brain"
 GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
+GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/2024/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
+
 GO_annot_path_name <- "BP"
 GO_annot_gene_column <- "ensembl_gene_id"
 
@@ -87,8 +89,7 @@ filterGOAnnotations <- function(GO_annotations, expression_data, GO_annot_gene_c
   expression_genes <- colnames(expression_data)
 
   #print(GO_annotations[, GO_annot_gene_column] %in% expression_genes)
-  print(GO_annot_gene_column)
-  print(head(expression_genes))
+
   GO_annotations <- filter(GO_annotations, GO_annotations[, GO_annot_gene_column] %in% expression_genes)
 
   return (GO_annotations)
@@ -112,33 +113,36 @@ keep20PlusGOAnnotations <- function(GO_annotations, expression_data, GO_annot_ge
   )
   # Remove rows where the GO_annot_gene_column is not unique
   GO_annotations_grouped = GO_annotations %>%
-    group_by(GO.ID) %>%
-    distinct(DB_Object_Symbol, .keep_all = TRUE) ## TODO Use GO annot gene column?
-
+    group_by(GO.ID) 
+    # %>%
+    # distinct(hgnc_symbol, .keep_all = TRUE) ## TODO Use GO annot gene column?
+  print(dim(GO_annotations_grouped))
   # Get the size of each GO
   group_sizes <- GO_annotations_grouped  %>%
     summarise(n = n())
-  print(group_sizes)
+  # print(group_sizes)
 
   # Select only GO Terms with more or equal to 20 genes 
   large_GO_Terms <- group_sizes %>%
     filter(n >= 20)
-  print(large_GO_Terms)
+  
 
   # Filter the measured GO annotations for only those with 20 or more genes
   GO_annotations_large = GO_annotations %>%
-  filter(GO.ID %in% large_GO_Terms$GO.ID)
+    filter(GO.ID %in% large_GO_Terms$GO.ID)
 
 
   # Remove rows with duplicate values in col1 and col2
-  df_no_duplicates <- GO_annotations_large[!duplicated(GO_annotations_large[c("DB_Object_Symbol", "GO.ID")]), ]
+  # df_no_duplicates <- GO_annotations_large[!duplicated(GO_annotations_large[c("DB_Object_Symbol", "GO.ID")]), ]
 
   # stopifnot(length(unique(GO_annotations_large$GO.ID)) == nrow(large_GO_Terms))
 
-  return (df_no_duplicates)
+  return (GO_annotations_large)
 }
 
-
+colnames(GO_annotations20)
+length(unique(GO_annotations$GO.ID))
+length(unique(GO_annotations20$GO.ID))
 
 # Remove GO annotations that don't have at least 20 Genes in our expression_data matrix.
 # Note the expression_data matrix should only have PC genes at this point
