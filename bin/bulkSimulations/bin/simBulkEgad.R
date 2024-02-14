@@ -13,13 +13,13 @@ GO_annot_path_name <- args[[4]]
 
 # The column you need to select in the gene annotations based on
 # what the gene names are in the expression matrix g
-GO_annot_gene_column <- args[[5]]
+tissue_name <- args[[5]]
+variance_level <- args[[6]]
 
 #expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/downsampleBulkExperiment/data/bulkDownSample/subsampled_seperatedOrganismParts/subsampled_Breast_GtexMergedPC_5.csv"
 #expression_matrix_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/bulkSimulations/data/simulated_bulk_dataset/brain_sc_with_metadata_cpm_pc.h5ad/simulated_ss100_var0.01_nsim10.csv"
 #GO_annot_path <- "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/preprocessing/preprocessGO_pipe/data/GO_annotationsWithENSGandPC/bp_annotations_withGeneData.csv"
 #GO_annot_gene_column <- "ensembl_gene_id"
-
 #GO_annot_gene_column <- "DB_Object_Symbol"
 
 ################ 1.1 : Load Packages
@@ -35,11 +35,8 @@ library(stringr)
 print("Loading Expression Dataset")
 expression_data <- read.table(expression_matrix_path, sep = ',', header= TRUE, row.names = 1)
 
-# Transpose the data frame
+# Transpose the data frame so that genes are columns and samples are rows
 expression_data <- t(expression_data)
-
-dim(expression_data)
-
 
 # Convert values to numeric while preserving NAs
 #expression_data <-  apply(expression_data, 2, function(col) as.numeric(as.character(col)))
@@ -52,15 +49,12 @@ print("Building Coexpression Network")
 coexpression_network <- cor(expression_data)
 coexpression_network[is.na(coexpression_network)] <- 0
 
-head(coexpression_network)
-dim(coexpression_network)
 ############ BUILDING ANNOTATION SET
 print("Building Annotation Set")
 
 ### Load GO annotations
 GO_annotations <- read.delim(file = GO_annot_path, sep = ",", stringsAsFactors = TRUE, row.names=NULL)
 
-dim(GO_annotations)
 
 usingENSG<- function(expression_data) {
   ###
@@ -122,13 +116,13 @@ keep20PlusGOAnnotations <- function(GO_annotations, expression_data, GO_annot_ge
 
 # Remove GO annotations that don't have at least 20 Genes in our expression_data matrix.
 # Note the expression_data matrix should only have PC genes at this point
-GO_annotations20 <- keep20PlusGOAnnotations(GO_annotations = GO_annotations,
-                                          expression_data = expression_data,
-                                          GO_annot_gene_column = GO_annot_gene_column)
+# GO_annotations20 <- keep20PlusGOAnnotations(GO_annotations = GO_annotations,
+#                                           expression_data = expression_data,
+#                                           GO_annot_gene_column = GO_annot_gene_column)
 ### Write summary statistics to file ###
-nrow(GO_annotations)
-nrow(GO_annotations) - nrow(GO_annotations20) # The number of GO annotations we removed
-nrow(GO_annotations20)
+# nrow(GO_annotations)
+# nrow(GO_annotations) - nrow(GO_annotations20) # The number of GO annotations we removed
+# nrow(GO_annotations20)
 # The average amount of Genes in a GO term
 
 getMeanCount <- function(GO_annotations) {
@@ -148,25 +142,15 @@ getMeanCount <- function(GO_annotations) {
 # The GO terms with the most genes in them that wre removed because the genes were not measured
 
 ###Make one hot encoding matrix
-colnames(coexpression_network)
 
-colnames(GO_annotations20)
-annotations <- make_annotations(GO_annotations20[,c(GO_annot_gene_column, 'GO.ID')], unique(GO_annotations20[,GO_annot_gene_column]), unique(GO_annotations20$GO.ID))
-
-annotations[, 1:100]
-head(coexpression_network)
-sum(annotations)
-
-colnames(annotations)
-
-#coexpression_network <- coexpression_network[1:1000, 1:1000]
-#annotations <- annotations[1:100, 1:300]
-
-dim(coexpression_network)
-dim(annotations)
+GO_annotations20 <- GO_annotations
+annotations <- make_annotations(GO_annotations20[,c("ensembl_gene_id", 'GO.ID')],
+                                                  unique(GO_annotations20[,"ensembl_gene_id"]),
+                                                   unique(GO_annotations20[,"GO.ID"]))
 
 ################ Neighbor Voting
 print("Performing Neighbor Voting. This can take a while")
+
 auroc <- neighbor_voting(genes.labels = annotations,
                          network = coexpression_network,
                          nFold = 3,
@@ -179,5 +163,7 @@ rm(annotations)
 ########### Write EGAD results
 # args[3] is organism part name
 # args[4] is MF or BP name
-write.table(x = auroc, paste0(expression_matrix_name,"_",GO_annot_path_name,"_EGAD.csv"), sep = ",")
+
+
+write.table(x = auroc, paste0(tissue_name,"_",variance_level,"_EGAD.csv"), sep = ",")
 
