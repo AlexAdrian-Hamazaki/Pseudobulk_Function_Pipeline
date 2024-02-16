@@ -37,7 +37,7 @@ process addENSG { // add protein data
 }
 
 process QCGO { //QC the GO terms by getting only the ones with 20 or more genes
-    publishDir "${params.PublishDir}/data/qc", mode: 'copy'
+    publishDir "${params.PublishDir}/data/processing", mode: 'copy'
     conda params.python3_9
 
 
@@ -69,7 +69,7 @@ process parse_obo {
     """
 }
 
-process get_final_gos {
+process combine_gos {
     // Also output a list of only the good GO terms that we are using, as well as their description
     publishDir "${params.PublishDir}/data/final", mode: 'copy'
     conda params.python3_9
@@ -78,7 +78,7 @@ process get_final_gos {
         path go_metadata
         each path(go_annot)
     output:
-        path "${go_annot.getSimpleName()}_final_qc_terms.csv"
+        path "${go_annot.getSimpleName()}_final_terms_with_metadata.csv"
     script:
     """
     get_final_go_terms.py ${go_metadata} ${go_annot} ${go_annot.getSimpleName()}
@@ -102,6 +102,23 @@ process cellTypeRelatedness_pipe {
     '''
 }
 
+process remove_dependance {
+
+    publishDir "${params.PublishDir}/data/final", mode: 'copy'
+
+    input:
+        path go_with_annotations
+    output:
+        path "${go_with_annotations.getSimpleName()}_no_dependance.csv"
+        path "${go_with_annotations.getSimpleName()}_dependent_terms.csv"
+        path "${go_with_annotations.getSimpleName()}_kept_terms.txt"
+    script:
+    """
+    removeGOOverlap.py ${go_with_annotations} ${go_with_annotations.getSimpleName()}
+    """
+
+}
+
 // Channels
 gaf_ch = Channel.fromPath(params.gaf)
 pc_map_ch = Channel.fromPath(params.pc_map)
@@ -121,14 +138,12 @@ workflow go_annotations_pipe {
     // Parse OBO file to just get GO name and description
     parse_obo(go_obo)
 
-    // QCGO.out[1].view()
     
-    // // Get the NAmes and description of the GO terms we want to use
-    get_final_gos(parse_obo.out, QCGO.out[1].collect())
-
-
-
-    
+    // Remove GO Terms that are dependent, keepiing only one of the dependent GO terms
+    remove_dependance(QCGO.out[0])
+    remove_dependance.out[0].view()
+    // Get the NAmes and description of the GO terms we want to use
+    combine_gos(parse_obo.out, remove_dependance.out[0])
 }
 
 
