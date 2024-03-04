@@ -65,7 +65,7 @@ process sim_bulk_EGAD {
         tuple val(ch_bootstraps), val("${expression_matrix.getBaseName()}"), path("*_EGAD.csv")
     shell:
     '''
-    simBulkEgad.R !{expression_matrix} !{expression_matrix.getSimpleName()} !{go_annotations_ch} !{go_annotations_ch.getSimpleName()} !{go_annot_column} !{variance_ch}
+    simBulkEgad.R !{expression_matrix} !{expression_matrix.getSimpleName()} !{go_annotations_ch} !{go_annotations_ch.getSimpleName()}  !{expression_matrix.getSimpleName()} !{variance_ch}
     '''
 }
 
@@ -237,7 +237,6 @@ workflow pipe {
         bulk_egad_ch
         ch_bootstraps
     main:
-
         bootstrap_tissue_ch = ch_bootstraps.combine(tissue_ch)
         // First Make cell type profiles for each tissue
         makeCTProfiles(bootstrap_tissue_ch)
@@ -318,7 +317,7 @@ workflow pipe {
         // melted_ch.brain.map{['Brain', it]}.set{brain_ch}
 
 workflow bootstrap {
-    
+    print("IN PIPE")
     main:
         def bootstrap_num = 0
         def bootstrap_lists = []    
@@ -326,7 +325,6 @@ workflow bootstrap {
             bootstrap_lists << bootstrap_num
         }
         ch_bootstraps = Channel.fromList(bootstrap_lists)
-
         pipe(tissue_ch,
             cell_type_proportions,
             variance_ch,

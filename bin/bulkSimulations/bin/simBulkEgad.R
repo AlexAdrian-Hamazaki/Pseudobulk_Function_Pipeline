@@ -52,6 +52,7 @@ coexpression_network[is.na(coexpression_network)] <- 0
 ############ BUILDING ANNOTATION SET
 print("Building Annotation Set")
 
+
 ### Load GO annotations
 GO_annotations <- read.delim(file = GO_annot_path, sep = ",", stringsAsFactors = TRUE, row.names=NULL)
 

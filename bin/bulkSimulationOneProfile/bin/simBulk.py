@@ -451,12 +451,12 @@ def getBaselineProportion(CTProfile_name:str, proportions_json_path:json) -> dic
     
     # Get the correct key
     for key in dict_propostions_json.keys():
-        if key == f"{CTProfile_name}.csv":
+        if key.split("_")[0] == CTProfile_name.split("_")[0]:
             correct_key = key
     try:
         # If no key was found, raise error
         if not correct_key:
-            raise ValueError(f"{key}. {CTProfile_name} Key not found")
+            raise ValueError(f"{key}, {CTProfile_name} Key not found")
     except ValueError as e:
         print(f"Error: {e}")
     
