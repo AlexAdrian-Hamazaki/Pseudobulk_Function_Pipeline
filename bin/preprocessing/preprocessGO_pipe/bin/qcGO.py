@@ -103,6 +103,9 @@ def main():
     
     # process GOs by removing duplicates
     GO = prelim_processing(GO)
+    
+    # Save this file that just has go annotations with no duplicates
+    GO.to_csv(f"{GO_name}_no_duplicates.csv.gz")
 
     # Group the GO Terms by their GO IDs and get the size of each GO term
     groupedGO = GO.groupby("GO ID").size()

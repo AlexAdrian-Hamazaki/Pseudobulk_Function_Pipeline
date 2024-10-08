@@ -60,7 +60,7 @@ process sim_bulk_EGAD {
 
     input:
         tuple val(ch_bootstraps), val(variance_ch), path(expression_matrix), path(lo_simulation_compositions), path(go_annotations_ch)
-        val go_annot_column
+        
     output:
         tuple val(ch_bootstraps), val("${expression_matrix.getBaseName()}"), path("*_EGAD.csv")
     shell:

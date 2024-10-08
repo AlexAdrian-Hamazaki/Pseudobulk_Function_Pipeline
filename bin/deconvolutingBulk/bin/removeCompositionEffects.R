@@ -16,25 +16,39 @@ brain_df = read.csv(brain_path, row.names = 1, header = TRUE)
 brain_df = as.data.frame(t(brain_df))
 # make the index be integrers and the Gene.Symbol name be where all the gene information is
 brain_df = rownames_to_column(brain_df, var = 'Gene.Symbol') # this should be a dataframe where the first column is Gene Symbol and the other columns are samples
+head(brain_df)
 
-
-# load marker genes 
-marker_brain_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/deconvolutingBulk/data/markers/brain_marker_genes_hgnc.csv"
+# load marker genes /space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/deconvolutingBulk/data/brain_marker_genes.csv
+#
+marker_brain_path = "/space/grp/aadrian/Pseudobulk_Function_Pipeline_HighRes/bin/deconvolutingBulk/bin/notebooks/pbmc_markers.csv"
 brain_markers = read.csv(marker_brain_path, header = TRUE, row.names = 1)
 brain_markers_short = head(brain_markers, 10)
+ncol(brain_markers_short)
 brain_markers_short
+grab_cols =  seq(2, nrow(brain_markers_short), by = 2)
+grab_cols
+brain_markers_col = brain_markers_short[,grab_cols]
+brain_markers_col
 # Coerce the brain_markers into a list of character vectors, where each character vector is the gene symbols of the marker genes for a cell type
-lo_lo_CT_markers = lapply(brain_markers, as_vector)
-
-
+lo_lo_CT_markers = lapply(brain_markers_col, as_vector)
+lo_lo_CT_markers
+# Check if lo_lo_hgnc_markers is a matrix or data frame
+lo_lo_CT_markers = as.list(brain_markers_col)
+lo_lo_CT_markers
+dim(brain_df)
+brain_df
+brain_df$Gene.Symbol
+typeof(lo_lo_CT_markers)
+# Estimate the Marker Gene Proviles.
 estimations =  mgpEstimate(exprData=brain_df,
                            genes=lo_lo_CT_markers,
                            geneColName='Gene.Symbol',
                            geneTransform = NULL) # removes genes if they are the minority in terms of rotation sign from estimation process
-
-
+estimations$estimates
+head(brain_df$Gene.Symbol)
 estimations$main <- estimations$estimates %>% sapply(function(vals) { vals }) 
 
+# Graph
 for (ct in colnames(estimations$main)) {
     # Get the data for this cell type
     mgp = estimations$main[,ct]
@@ -67,6 +81,8 @@ for (ct in colnames(estimations$main)) {
 lo_genes = brain_df[,1]
 rownames(brain_df) = brain_df$Gene.Symbol
 brain_df = brain_df %>% select(-Gene.Symbol)
+
+# Fit lm for each gene onto MGP
 fit_model_for_one_gene = function(currGene, brain_df, estimations) {
 
     # First, get the bulk expression for the gene I'm currently fitting a model for

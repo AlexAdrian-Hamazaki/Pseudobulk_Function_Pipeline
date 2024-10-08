@@ -18,7 +18,7 @@ def main():
     GO ID : Go ID
     Aspect : MF, BP, CF
     DB Object Name: Gene Name
-    
+    Evidence Code: Evidence code for curation
     
     bpProcessed.csv: A file with only the biological process GO relationships
     mfProcessed.csv: A file with only the  MFrelationships
@@ -47,7 +47,7 @@ def main():
     
     GO.columns = colnames
     
-    GO = GO.loc[:,['DB_Object_Symbol', 'GO ID', 'Aspect', 'DB Object Name'	]]
+    GO = GO.loc[:,['DB_Object_Symbol', 'GO ID', 'Aspect', 'DB Object Name', "Evidence Code"	]]
 
     BP = GO[GO.loc[:, 'Aspect'] == "P"]
     

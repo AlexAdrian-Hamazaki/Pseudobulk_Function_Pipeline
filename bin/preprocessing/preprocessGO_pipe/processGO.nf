@@ -46,6 +46,8 @@ process QCGO { //QC the GO terms by getting only the ones with 20 or more genes
     output:
         path "${go_annot.simpleName}_qc_annotations.csv" // The final output
         path "${go_annot.simpleName}_qc_goTerms.csv"// The final output
+        path "${go_annot.simpleName}_no_duplicates.csv.gz"// The final output
+
 
         path "processed_${go_annot.simpleName}_distribution.png" // Distribution of how many genes are in each GO TErm
         path "unprocessed_${go_annot.simpleName}_distribution.png"

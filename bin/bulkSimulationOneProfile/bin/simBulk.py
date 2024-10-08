@@ -96,17 +96,7 @@ def master_simulate_bulk_wrapper(loSerNumberOfCells:list,
     # Save the bulk simulated dataset
     df_simulatedBulkDataset.to_csv(f'{CTProfile_name}_.csv.gz', compression='gzip')
     
-    
-def CPM_norm_df(df):
-    # Genes are rows, samples are columns
-    
-    # Step 1: Calculate library size for each sample
-    library_size = df.sum(axis = 0)
 
-    # Step 2: Calculate CPM for each gene in each sample
-    cpm_df = (df.div(library_size, axis=1)) * 1e6  # Multiply by 1 million
-    
-    return cpm_df
 
 
 def checkSameCTs(dictBaselineProportion:dict, df:pd.DataFrame) -> bool:
