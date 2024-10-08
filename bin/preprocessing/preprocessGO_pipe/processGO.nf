@@ -143,7 +143,6 @@ workflow go_annotations_pipe {
     
     // Remove GO Terms that are dependent, keepiing only one of the dependent GO terms
     remove_dependance(QCGO.out[0])
-    remove_dependance.out[0].view()
     // Get the NAmes and description of the GO terms we want to use
     combine_gos(parse_obo.out, remove_dependance.out[0])
 }
