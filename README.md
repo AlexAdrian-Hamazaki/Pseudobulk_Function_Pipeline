@@ -1,4 +1,4 @@
-# BIOF501 Term Project: Pipeline for Pseudobulking and Function Prediction 
+# Thesis
 
 ### *By Alex Adrian-Hamazaki*
 
