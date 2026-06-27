@@ -52,15 +52,11 @@ print("Building Coexpression Network")
 coexpression_network <- cor(expression_data)
 coexpression_network[is.na(coexpression_network)] <- 0
 
-head(coexpression_network)
-dim(coexpression_network)
 ############ BUILDING ANNOTATION SET
 print("Building Annotation Set")
 
 ### Load GO annotations
 GO_annotations <- read.delim(file = GO_annot_path, sep = ",", stringsAsFactors = TRUE, row.names=NULL)
-
-dim(GO_annotations)
 
 usingENSG<- function(expression_data) {
   ###
@@ -107,7 +103,7 @@ keep20PlusGOAnnotations <- function(GO_annotations, expression_data, GO_annot_ge
   # Remove rows where the GO_annot_gene_column is not unique
   GO_annotations_grouped = GO_annotations %>%
     group_by(GO.ID) %>%
-    distinct(DB_Object_Symbol, .keep_all = TRUE) ## TODO Use GO annot gene column?
+    distinct(GO_annot_gene_column, .keep_all = TRUE) ## TODO Use GO annot gene column?
 
   # Get the size of each GO
   group_sizes <- GO_annotations_grouped  %>%
@@ -125,23 +121,12 @@ keep20PlusGOAnnotations <- function(GO_annotations, expression_data, GO_annot_ge
 
 
   # Remove rows with duplicate values in col1 and col2
-  df_no_duplicates <- GO_annotations_large[!duplicated(GO_annotations_large[c("DB_Object_Symbol", "GO.ID")]), ]
+  df_no_duplicates <- GO_annotations_large[!duplicated(GO_annotations_large[c(GO_annot_gene_column, "GO.ID")]), ]
 
   # stopifnot(length(unique(GO_annotations_large$GO.ID)) == nrow(large_GO_Terms))
 
   return (df_no_duplicates)
 }
-
-# Remove GO annotations that don't have at least 20 Genes in our expression_data matrix.
-# Note the expression_data matrix should only have PC genes at this point
-GO_annotations20 <- keep20PlusGOAnnotations(GO_annotations = GO_annotations,
-                                          expression_data = expression_data,
-                                          GO_annot_gene_column = GO_annot_gene_column)
-### Write summary statistics to file ###
-nrow(GO_annotations)
-nrow(GO_annotations) - nrow(GO_annotations20) # The number of GO annotations we removed
-
-# The average amount of Genes in a GO term
 
 getMeanCount <- function(GO_annotations) {
   ###
@@ -160,25 +145,20 @@ getMeanCount <- function(GO_annotations) {
 # The GO terms with the most genes in them that wre removed because the genes were not measured
 
 ###Make one hot encoding matrix
-colnames(coexpression_network)
-
-colnames(GO_annotations20)
-annotations <- make_annotations(GO_annotations20[,c(GO_annot_gene_column, 'GO.ID')], unique(GO_annotations20[,GO_annot_gene_column]), unique(GO_annotations20$GO.ID))
-
-annotations[1:10, 1:10]
-head(coexpression_network)
-sum(annotations)
-
-colnames(annotations)
-
-#coexpression_network <- coexpression_network[1:1000, 1:1000]
-#annotations <- annotations[1:100, 1:300]
-
-dim(coexpression_network)
-dim(annotations)
-
+GO_annotations20 <- GO_annotations
+print(head(GO_annotations20))
+annotations <- make_annotations(GO_annotations20[,c(GO_annot_gene_column, 'GO.ID')],
+                                                  unique(GO_annotations20[,GO_annot_gene_column]),
+                                                   unique(GO_annotations20[,"GO.ID"]))
+# print(head(annotations))
+print(head(coexpression_network))
+print(dim(annotations))
+print(dim(coexpression_network))
 ################ Neighbor Voting
 print("Performing Neighbor Voting. This can take a while")
+# print(head(annotations))
+print("~~~~~~~~~")
+# print(head(coexpression_network))
 auroc <- neighbor_voting(genes.labels = annotations,
                          network = coexpression_network,
                          nFold = 3,

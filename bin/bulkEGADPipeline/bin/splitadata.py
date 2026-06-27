@@ -8,6 +8,7 @@ import anndata as ad
 def main():
     merged_adata_path = sys.argv[1]
     organism_part_str = sys.argv[2]
+    gene_column = sys.argv[3]
     
     # Load adata
     adata = ad.read_h5ad(merged_adata_path)
@@ -15,6 +16,9 @@ def main():
     # Split adata into organism_part
     adata_organism_part = adata[adata.obs.SMTS == organism_part_str]
     
+    if gene_column == "ensembl_gene_id":
+         adata_organism_part.var["ensembl_gene_id"] = adata_organism_part.var.Name.str.split(".").str[0]
+         adata_organism_part.var.index = adata_organism_part.var.ensembl_gene_id
     # save split
     df = adata_organism_part.to_df()
     df.to_csv(f"{organism_part_str}_split.csv.gz")
