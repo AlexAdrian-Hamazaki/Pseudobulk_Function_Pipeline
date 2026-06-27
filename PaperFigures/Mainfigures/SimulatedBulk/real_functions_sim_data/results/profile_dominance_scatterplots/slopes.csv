@@ -1,0 +1,11 @@
+cell_type,condition,slope,pval
+Astrocytes,No Neurons,0.010582883327992943,1.4962183010094012e-15
+Astrocytes,All cell types,-0.005997361485428381,0.0
+Microglial cells,No Neurons,0.002899706431352295,0.000515999846849384
+Microglial cells,All cell types,-0.020802676741333383,0.0
+Oligodendrocyte precursor cells,No Neurons,-0.010060656172110272,6.77753638845127e-05
+Oligodendrocyte precursor cells,All cell types,-0.005469703170497324,1.3527081799146588e-15
+Oligodendrocytes,No Neurons,0.0207020542330058,4.180379206512917e-31
+Oligodendrocytes,All cell types,-0.008848687063793825,0.0
+Neurons,No Neurons,-0.012278196617062951,8.520609033838352e-45
+Neurons,All cell types,0.029600015349158838,0.0
