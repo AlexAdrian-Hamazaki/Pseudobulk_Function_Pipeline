@@ -8,7 +8,7 @@
 
 This repository contains the Nextflow pipelines and analysis notebooks for a thesis investigating how **cellular composition of bulk RNA-seq data affects gene function prediction** using the EGAD (Extending Gene set Analysis with Diagnostics) framework.
 
-The core question: when bulk RNA-seq is used to build co-expression networks for gene function prediction (via neighbor voting / AUROC), how much of the predictive signal comes from the tissue's **cell type composition** rather than intrinsic gene biology?
+The core question: when bulk RNA-seq is used to build co-expression networks for gene function prediction (via neighbor voting / AUROC), how much of the predictive signal comes from the tissue's **cell type composition** rather than cross-cell co-variance?
 
 ---
 
@@ -38,23 +38,27 @@ The core question: when bulk RNA-seq is used to build co-expression networks for
 All pipelines use **EGAD's neighbor voting** algorithm:
 1. Build a Pearson co-expression network from an expression matrix (samples × genes)
 2. For each GO term, predict membership using network neighborhood labels
-3. Report AUROC per GO term — values > 0.5 indicate learnable signal
+3. Report AUROC per GO term
 
-### Data Sources
+### Expression Data Sourcesn
 
 | Source | Type | Use |
 |--------|------|-----|
 | GTEx | Real bulk RNA-seq (multi-tissue) | Baseline function prediction performance |
 | Brain scRNA-seq | Single-cell h5ad | Cell type profiles + bulk simulation ground truth |
 
-### Pipelines at a Glance
+### Function Labels
+
+
+
+### Pipelines
 
 | Pipeline | Input | Purpose |
 |----------|-------|---------|
-| `bulkEGADPipeline` | GTEx h5ad | Benchmark function prediction on real bulk data |
-| `ctProfilePipeline` | scRNA-seq h5ad | Function prediction from aggregated cell type profiles |
+| `bulkEGADPipeline` | GTEx h5ad | Function prediction on real bulk data |
+| `ctProfilePipeline` | scRNA-seq h5ad | Function prediction from cell type profiles |
 | `EGADSimulatedGOTerms` | scRNA-seq h5ad + composition JSON | Simulate bulk at controlled compositions; test real & simulated GO terms |
-| `expansionSimulation` | scRNA-seq h5ad | Test how adding/removing cell type profiles changes prediction |
+| `expansionSimulation` | scRNA-seq h5ad | Test how adding/removing cell type profiles changes function learnability |
 
 ---
 
