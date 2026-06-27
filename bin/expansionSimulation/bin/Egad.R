@@ -23,6 +23,20 @@ tissue_name <- args[[5]]
 #GO_annot_gene_column <- "ensembl_gene_id"
 #GO_annot_gene_column <- "DB_Object_Symbol"
 
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("EGAD")
+
+# Install tidyverse if not already installed
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages("tidyverse")
+}
+
+# Load tidyverse
+library(tidyverse)
+
+
 ################ 1.1 : Load Packages
 library(EGAD)
 library(tidyverse)

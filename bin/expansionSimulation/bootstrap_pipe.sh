@@ -1,29 +1,29 @@
 #!/bin/bash
 
-# Check if num_bootstraps and publishDir are provided
+# Check arguments
 if [ -z "$1" ] || [ -z "$2" ]; then
-    echo "Usage: $0 <num_bootstraps> <publishDir>"
+    echo "Usage: $0 <num_bootstraps> <publishDir> [max_parallel]"
     exit 1
 fi
 
 num_bootstraps="$1"
 publishDir="$2"
+max_parallel="${3:-4}"   # default parallel jobs = 4
 
-# Iterate through a while loop
-iteration=1
+run_bootstrap () {
+    iteration=$1
+    publishDir=$2
 
-while [ "$iteration" -le "$num_bootstraps" ]; do
-	echo "\n~~~~~~~~~~~~Running $iteration~~~~~~~~~~~~~"
-    # Modify the "nextflow.config" file
-    sed -i "s|^params.publish.*|params.publish = \"$publishDir/$iteration\"|" nextflow.config
+    echo "~~~~~~~~~~~~Running $iteration~~~~~~~~~~~~~"
 
-    # Run the "nextflow" command
-    nextflow main.nf
+    nextflow run main.nf \
+        --publish "$publishDir/$iteration"
+}
 
-    # Increment the iteration counter
-    ((iteration++))
-done
+export -f run_bootstrap
 
+seq 1 "$num_bootstraps" | \
+    xargs -n1 -P "$max_parallel" -I{} bash -c 'run_bootstrap "$@"' _ {} "$publishDir"
 
 # Run using this command
-# ./bootstrap_pipe.sh 100 data/bootstrapped
+# ./bootstrap_pipe.sh 100 data/bootstrapped maxforks
